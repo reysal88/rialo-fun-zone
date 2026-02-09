@@ -18,7 +18,7 @@
   }
 
   main {
-    flex: 1; /* isi halaman mengambil sisa space supaya footer di bawah */
+    flex: 1; /* isi halaman mengambil sisa space supaya footer tetap bawah */
   }
 
   /* Judul blinking */
@@ -40,13 +40,15 @@
   .menu {
     display: flex;
     justify-content: center;
-    gap: 15px; /* jarak antar logo */
+    gap: 20px; /* jarak antar logo */
     margin-top: 40px;
-    flex-wrap: wrap;
+    flex-wrap: wrap; /* responsive HP */
   }
 
   .menu img {
-    width: 120px; /* semua logo sama */
+    width: 15vw;        /* fleksibel terhadap layar */
+    max-width: 150px;   /* maksimal 150px di desktop */
+    min-width: 100px;   /* minimal 100px di HP */
     height: auto;
     cursor: pointer;
     transition: transform 0.2s;
