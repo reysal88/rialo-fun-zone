@@ -5,15 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rialo Fun</title>
 <style>
+  /* Pastikan body selalu minimal tinggi 100vh supaya footer di bawah */
   body {
     background-color: #f5f0e6;
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
     text-align: center;
   }
 
-  /* Judul blinking dengan warna hitam & warna menyala */
+  main {
+    flex: 1; /* isi halaman mengambil sisa space supaya footer di bawah */
+  }
+
+  /* Judul blinking */
   header h1 {
     margin: 20px 0;
     font-size: 2em;
@@ -34,7 +42,7 @@
     justify-content: center;
     gap: 15px; /* jarak antar logo */
     margin-top: 40px;
-    flex-wrap: wrap; /* responsive HP */
+    flex-wrap: wrap;
   }
 
   .menu img {
@@ -50,11 +58,11 @@
 
   /* Footer */
   footer {
+    background-color: #e0d8c2;
+    padding: 10px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 20px;
-    background-color: #e0d8c2;
     flex-wrap: wrap;
   }
 
@@ -63,10 +71,6 @@
     text-decoration: none;
     color: #333;
     font-weight: bold;
-  }
-
-  .footer-center a {
-    margin-left: 0;
   }
 
   .footer-right a {
@@ -97,12 +101,14 @@
   <h1>Rethink Rebuild Rialo</h1>
 </header>
 
-<!-- Menu Logo -->
-<div class="menu">
-  <a href="quiz.html"><img src="images/quiz-logo.png" alt="Fun Quiz"></a>
-  <a href="game.html"><img src="images/game-logo.png" alt="Fun Game"></a>
-  <a href="gif.html"><img src="images/gif-logo.png" alt="Fun GIF"></a>
-</div>
+<main>
+  <!-- Menu Logo -->
+  <div class="menu">
+    <a href="quiz.html"><img src="images/quiz.png" alt="Fun Quiz"></a>
+    <a href="game.html"><img src="images/game-logo.png" alt="Fun Game"></a>
+    <a href="gif.html"><img src="images/gif.png" alt="Fun GIF"></a>
+  </div>
+</main>
 
 <!-- Footer -->
 <footer>
