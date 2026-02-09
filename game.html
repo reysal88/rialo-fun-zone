@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rialo Game - Placeholder</title>
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: #000;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  canvas {
+    display: block;
+    margin: 0 auto;
+    background-color: #000;
+  }
+
+  h1 {
+    margin: 10px 0;
+  }
+
+  #restartBtn {
+    margin-top: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+    display: none;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<h1>Rialo: Catch the Oracle</h1>
+<canvas id="gameCanvas" width="400" height="600"></canvas>
+<button id="restartBtn">Restart Game</button>
+
+<script>
+// ===== Setup Canvas =====
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let gameOver = false;
+let score = 0;
+
+// Pesawat placeholder
+const ship = {
+  x: canvas.width / 2 - 25,
+  y: canvas.height - 60,
+  width: 50,
+  height: 50,
+  speed: 5,
+  dx: 0
+};
+
+// Monster placeholder
+const monsters = [];
+const monsterSize = 40;
+const monsterSpeed = 2;
+let spawnInterval = 2000;
+
+// Laser
+const lasers = [];
+const laserWidth = 5;
+const laserHeight = 20;
+const laserSpeed = 7;
+
+// ===== Controls =====
+let touchX = null;
+let isTouching = false;
+
+document.addEventListener('keydown', e => {
+  if(e.key === 'ArrowLeft') ship.dx = -ship.speed;
+  if(e.key === 'ArrowRight') ship.dx = ship.speed;
+  if(e.key === ' ') shootLaser();
+});
+
+document.addEventListener('keyup', e => {
+  if(e.key === 'ArrowLeft' || e.key === 'ArrowRight') ship.dx = 0;
+});
+
+// Touch controls
+canvas.addEventListener('touchstart', e => {
+  touchX = e.touches[0].clientX - canvas.getBoundingClientRect().left;
+  isTouching = true;
+});
+
+canvas.addEventListener('touchmove', e => {
+  touchX = e.touches[0].clientX - canvas.getBoundingClientRect().left;
+});
+
+canvas.addEventListener('touchend', e => {
+  isTouching = false;
+});
+
+// ===== Functions =====
+function shootLaser() {
+  lasers.push({x: ship.x + ship.width/2 - laserWidth/2, y: ship.y, width: laserWidth, height: laserHeight});
+}
+
+function spawnMonster() {
+  const x = Math.random() * (canvas.width - monsterSize);
+  monsters.push({x: x, y: -monsterSize, width: monsterSize, height: monsterSize});
+}
+
+function update() {
+  if(gameOver) return;
+
+  // Update ship
+  ship.x += ship.dx;
+  if(isTouching && touchX !== null) ship.x = touchX - ship.width/2;
+  if(ship.x < 0) ship.x = 0;
+  if(ship.x + ship.width > canvas.width) ship.x = canvas.width - ship.width;
+
+  // Update lasers
+  lasers.forEach((laser, index) => {
+    laser.y -= laserSpeed;
+    if(laser.y + laser.height < 0) lasers.splice(index, 1);
+  });
+
+  // Update monsters
+  monsters.forEach((monster, mIndex) => {
+    monster.y += monsterSpeed;
+
+    // Collision with ship
+    if(ship.x < monster.x + monster.width &&
+       ship.x + ship.width > monster.x &&
+       ship.y < monster.y + monster.height &&
+       ship.y + ship.height > monster.y) {
+         gameOver = true;
+         document.getElementById('restartBtn').style.display = 'inline-block';
+    }
+
+    // Collision with lasers
+    lasers.forEach((laser, lIndex) => {
+      if(laser.x < monster.x + monster.width &&
+         laser.x + laser.width > monster.x &&
+         laser.y < monster.y + monster.height &&
+         laser.y + laser.height > monster.y) {
+           monsters.splice(mIndex,1);
+           lasers.splice(lIndex,1);
+           score += 10;
+      }
+    });
+
+    if(monster.y > canvas.height) monsters.splice(mIndex,1);
+  });
+}
+
+function draw() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // Draw ship placeholder
+  ctx.fillStyle = 'cyan';
+  ctx.fillRect(ship.x, ship.y, ship.width, ship.height);
+
+  // Draw lasers
+  ctx.fillStyle = 'red';
+  lasers.forEach(laser => ctx.fillRect(laser.x, laser.y, laser.width, laser.height));
+
+  // Draw monsters with "Oracle"
+  monsters.forEach(monster => {
+    ctx.fillStyle = 'purple';
+    ctx.fillRect(monster.x, monster.y, monster.width, monster.height);
+
+    ctx.fillStyle = 'yellow';
+    ctx.font = '14px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Oracle', monster.x + monster.width / 2, monster.y - 5);
+  });
+
+  // Draw score
+  ctx.fillStyle = '#fff';
+  ctx.font = '20px Arial';
+  ctx.fillText('Score: ' + score, 10, 30);
+}
+
+function loop() {
+  update();
+  draw();
+  if(!gameOver) requestAnimationFrame(loop);
+}
+
+spawnMonster();
+setInterval(spawnMonster, spawnInterval);
+loop();
+
+// ===== Restart =====
+document.getElementById('restartBtn').addEventListener('click', () => {
+  monsters.length = 0;
+  lasers.length = 0;
+  score = 0;
+  ship.x = canvas.width/2 - ship.width/2;
+  gameOver = false;
+  document.getElementById('restartBtn').style.display = 'none';
+  loop();
+});
+</script>
+</body>
+</html>
