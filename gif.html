@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rialo Quiz</title>
+<style>
+body {
+  background-color: #000;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+h1 {
+  font-size: 2.2em;
+  margin: 40px 0 20px 0;
+}
+
+.quiz-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+button {
+  padding: 12px 24px;
+  font-size: 1.2em;
+  margin: 10px 0;
+  cursor: pointer;
+  border-radius: 8px;
+  border: none;
+  background-color: #fff;
+  color: #000;
+  transition: 0.2s;
+}
+
+button:hover {
+  background-color: #ff4d4d;
+  color: #fff;
+}
+
+/* Quiz question styling */
+.quiz-question {
+  font-size: 1.5em;
+  margin: 20px 0 10px 0;
+}
+
+.quiz-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.quiz-options button {
+  background-color: #222;
+  color: #fff;
+  font-size: 1.2em;
+  border: 2px solid #fff;
+  border-radius: 6px;
+}
+
+.quiz-options button:hover {
+  background-color: #ff4d4d;
+  color: #fff;
+}
+
+.quiz-number {
+  font-size: 1.4em;
+  margin-bottom: 15px;
+  text-decoration: underline;
+}
+</style>
+</head>
+<body>
+
+<div class="quiz-container">
+  <h1>Rialo Fun Quiz</h1>
+  <button id="startBtn">Start Quiz</button>
+  
+  <div id="quizContent" style="display:none;">
+    <div class="quiz-number" id="quizNumber"></div>
+    <div class="quiz-question" id="quizQuestion"></div>
+    <div class="quiz-options" id="quizOptions"></div>
+  </div>
+  
+  <div id="result" style="display:none;">
+    <h1>Your Score</h1>
+    <p id="scoreText"></p>
+  </div>
+</div>
+
+<script>
+// Quiz data
+const quizData = [
+  { question: "What is Rialo's slogan?", options: ["Rethink,Reconnect,Rialo","Rethink,Recovery,Rialo","Reynaldo,Remysterio,Rialo","Rethink,Rebuild,Rialo"], answer: 3 },
+  { question: "Official X (Twitter) account of Rialo", options: ["https://x.com/Rialo","https://x.com/RialoHQ","https://x.com/Rialo_HQ","https://x.com/RialO"], answer: 1 },
+  { question: "Official Telegram link of Rialo", options: ["https://t.me/rialoprotocoll","https://t.me/rialoprotocol","https://t.me/rialo","https://t.me/rialo_protocol"], answer: 1 },
+  { question: "Official website of Rialo", options: ["https://www.rialo.io","https://www.rialo.com","https://www.rialo.vercell.apps","https://www.rialo.net"], answer: 0 },
+  { question: "Who is the CEO of Rialo?", options: ["AdeBayor","Ade Rai","Ade Adepoju","Adele"], answer: 2 },
+  { question: "Rialo is backed by?", options: ["Pantera tigris","Pantera Capital","Polychain Capital","Binance Alpha"], answer: 1 },
+  { question: "What is the current funding round of Rialo?", options: ["20M IDR","25M USD","15M USD","20M USD"], answer: 3 },
+  { question: "One of Rialo’s goals is to solve?", options: ["Miracle problem","Obstacle problem","Oracle Problem","Circle Problem"], answer: 2 },
+  { question: "On which date did Rialo post on X about tracking 1337 live tickers?", options: ["15 Sept 2025","04 Nov 2025","31 Feb 2026","05 Dec 2002"], answer: 1 },
+  { question: "When did Rialo announce partnership with Keplr wallet on X?", options: ["03 Feb 2026","06 Dec 2025","15 Jan 2026","Coming soon"], answer: 0 },
+  { question: "Which of the following is NOT part of the Rialo Discord team?", options: ["Noble","RialOrca","Gelz","EricArgent"], answer: 2 },
+  { question: "What is the cooldown time for the #grialo channel in Rialo Discord?", options: ["6 hours","1 hour","5 hours","72 hours"], answer: 0 },
+  { question: "What is the name of the Discord channel for pasting X content links?", options: ["Tweet link","Research","Post X","Spotlight"], answer: 1 },
+  { question: "On which day is the weekly poker event held in Rialo Discord?", options: ["Saturday","Sunday","Friday","No! There is no poker event"], answer: 3 },
+  { question: "Which statement is correct?", options: ["On Rialo, privacy & compliance is not enforced directly at the protocol level.","On Rialo, privacy & compliance are enforced directly at the protocol level","On Rialo, privacy and compliance are not enforced at the protocol level, but handled only at the application level","All is correct"], answer: 1 },
+  { question: "What is the answer to quiz No. 9?", options: ["03 Feb 2026","04 Nov 2025","15 Jan 2026","15 Sept 2025"], answer: 1 },
+  { question: "What is the question of quiz No. 8?", options: ["One of Rialo’s goals is to solve?","Which of the following is NOT part of the Rialo Discord team?","Official website of Rialo","Official X account of Rialo"], answer: 0 },
+  { question: "“Oracle Problem” is the answer to which quiz number?", options: ["Quiz No. 3","Quiz No. 8","Quiz No. 11","Quiz No. 6"], answer: 1 },
+  { question: "One of the things that makes Rialo different", options: ["Real world apps","Real time data","No bridges","All is correct"], answer: 3 },
+  { question: "Rialo is..?", options: ["Real world onchain","Real world layer one","Real world blockchain","Real Madrid"], answer: 2 }
+];
+
+let currentQuiz = 0;
+let score = 0;
+
+const startBtn = document.getElementById("startBtn");
+const quizContent = document.getElementById("quizContent");
+const quizNumber = document.getElementById("quizNumber");
+const quizQuestion = document.getElementById("quizQuestion");
+const quizOptions = document.getElementById("quizOptions");
+const resultDiv = document.getElementById("result");
+const scoreText = document.getElementById("scoreText");
+
+startBtn.addEventListener("click", () => {
+  startBtn.style.display = "none";
+  quizContent.style.display = "block";
+  showQuiz();
+});
+
+function showQuiz() {
+  quizNumber.textContent = `Quiz ${currentQuiz + 1}`;
+  quizQuestion.textContent = quizData[currentQuiz].question;
+  quizOptions.innerHTML = "";
+  quizData[currentQuiz].options.forEach((option, index) => {
+    const btn = document.createElement("button");
+    btn.textContent = `${String.fromCharCode(65 + index)}. ${option}`; // A/B/C/D
+    btn.addEventListener("click", () => checkAnswer(index));
+    quizOptions.appendChild(btn);
+  });
+}
+
+function checkAnswer(selected) {
+  if(selected === quizData[currentQuiz].answer) {
+    score += 5;
+  }
+  currentQuiz++;
+  if(currentQuiz < quizData.length) {
+    showQuiz();
+  } else {
+    quizContent.style.display = "none";
+    resultDiv.style.display = "block";
+    scoreText.textContent = `${score} / ${quizData.length * 5} points`;
+  }
+}
+</script>
+
+</body>
+</html>
