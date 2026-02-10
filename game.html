@@ -3,14 +3,32 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rialo Game</title>
+<title>Rialo Game - PC Version</title>
 <style>
-  body { margin:0; background:#000; color:#fff; text-align:center; font-family:Arial; }
-  canvas { display:block; margin:0 auto; background:#000; }
-  #restartBtn { margin-top:10px; padding:10px 20px; font-size:16px; display:none; cursor:pointer; }
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: #000;
+    font-family: Arial, sans-serif;
+    color: #fff;
+    text-align: center;
+  }
+  canvas {
+    display: block;
+    margin: 0 auto;
+    background-color: #000;
+  }
+  #restartBtn {
+    margin-top: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+    display: none;
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
+
 <h1>Rialo: Catch the Oracle</h1>
 <canvas id="gameCanvas" width="400" height="600"></canvas>
 <button id="restartBtn">Restart Game</button>
@@ -19,62 +37,132 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-let ship = {x:175, y:540, w:50, h:50, dx:0, speed:5};
-let lasers = [];
-let monsters = [];
-let score=0;
-let gameOver=false;
+let gameOver = false;
+let score = 0;
 
-// ===== Controls =====
-let touchX = null;
-let isTouching = false;
+// Pesawat
+const ship = { x: 175, y: 540, width: 50, height: 50, dx: 0, speed: 5 };
 
-document.addEventListener('keydown', e=>{ if(e.key==='ArrowLeft') ship.dx=-ship.speed; if(e.key==='ArrowRight') ship.dx=ship.speed; if(e.key===' ') shootLaser(); });
-document.addEventListener('keyup', e=>{ if(e.key==='ArrowLeft'||e.key==='ArrowRight') ship.dx=0; });
+// Laser
+const lasers = [];
+const laserSpeed = 7;
 
-canvas.addEventListener('touchstart', e=>{
-  const rect=canvas.getBoundingClientRect();
-  touchX=e.touches[0].clientX-rect.left; isTouching=true;
-  const touchY=e.touches[0].clientY-rect.top;
-  if(touchX>=ship.x && touchX<=ship.x+ship.w && touchY>=ship.y && touchY<=ship.y+ship.h) shootLaser();
+// Monster
+const monsters = [];
+const monsterSize = 40;
+const monsterSpeed = 2;
+
+// Keyboard controls
+document.addEventListener('keydown', e => {
+  if(e.key === 'ArrowLeft') ship.dx = -ship.speed;
+  if(e.key === 'ArrowRight') ship.dx = ship.speed;
+  if(e.key === ' ') shootLaser();
 });
-canvas.addEventListener('touchmove', e=>{ touchX=e.touches[0].clientX-canvas.getBoundingClientRect().left; });
-canvas.addEventListener('touchend', e=>{ isTouching=false; });
-
-canvas.addEventListener('click', e=>{
-  const rect=canvas.getBoundingClientRect();
-  const clickX=e.clientX-rect.left, clickY=e.clientY-rect.top;
-  if(clickX>=ship.x && clickX<=ship.x+ship.w && clickY>=ship.y && clickY<=ship.y+ship.h) shootLaser();
+document.addEventListener('keyup', e => {
+  if(e.key === 'ArrowLeft' || e.key === 'ArrowRight') ship.dx = 0;
 });
 
-// ===== Functions =====
-function shootLaser(){ lasers.push({x:ship.x+ship.w/2-2.5, y:ship.y, w:5, h:20}); }
+function shootLaser() {
+  lasers.push({ x: ship.x + ship.width/2 - 2.5, y: ship.y, width: 5, height: 20 });
+}
 
-function spawnMonster(){ monsters.push({x:Math.random()*(canvas.width-40), y:-40, w:40, h:40}); }
+function spawnMonster() {
+  const x = Math.random() * (canvas.width - monsterSize);
+  monsters.push({ x: x, y: -monsterSize, width: monsterSize, height: monsterSize });
+}
 
-function update(){
+function update() {
   if(gameOver) return;
-  // ship
-  ship.x+=ship.dx; if(isTouching && touchX!==null) ship.x=touchX-ship.w/2;
-  if(ship.x<0) ship.x=0; if(ship.x+ship.w>canvas.width) ship.x=canvas.width-ship.w;
-  // lasers
-  for(let i=lasers.length-1;i>=0;i--){ lasers[i].y-=7; if(lasers[i].y+lasers[i].h<0) lasers.splice(i,1); }
-  // monsters
-  for(let i=monsters.length-1;i>=0;i--){
-    monsters[i].y+=2;
-    if(ship.x<monsters[i].x+monsters[i].w && ship.x+ship.w>monsters[i].x && ship.y<monsters[i].y+monsters[i].h && ship.y+ship.h>monsters[i].y){ gameOver=true; document.getElementById('restartBtn').style.display='inline-block'; }
-    for(let j=lasers.length-1;j>=0;j--){ if(lasers[j].x<monsters[i].x+monsters[i].w && lasers[j].x+lasers[j].w>monsters[i].x && lasers[j].y<monsters[i].y+monsters[i].h && lasers[j].y+lasers[j].h>monsters[i].y){ monsters.splice(i,1); lasers.splice(j,1); score+=10; break; } }
-    if(monsters[i] && monsters[i].y>canvas.height) monsters.splice(i,1);
+
+  // Update ship
+  ship.x += ship.dx;
+  if(ship.x < 0) ship.x = 0;
+  if(ship.x + ship.width > canvas.width) ship.x = canvas.width - ship.width;
+
+  // Update lasers
+  for(let i = lasers.length-1; i>=0; i--){
+    lasers[i].y -= laserSpeed;
+    if(lasers[i].y + lasers[i].height < 0) lasers.splice(i,1);
+  }
+
+  // Update monsters
+  for(let i = monsters.length-1; i>=0; i--){
+    monsters[i].y += monsterSpeed;
+
+    // Collision with ship
+    if(ship.x < monsters[i].x + monsters[i].width &&
+       ship.x + ship.width > monsters[i].x &&
+       ship.y < monsters[i].y + monsters[i].height &&
+       ship.y + ship.height > monsters[i].y) {
+         gameOver = true;
+         document.getElementById('restartBtn').style.display = 'inline-block';
+    }
+
+    // Collision with lasers
+    for(let j=lasers.length-1; j>=0; j--){
+      if(lasers[j].x < monsters[i].x + monsters[i].width &&
+         lasers[j].x + lasers[j].width > monsters[i].x &&
+         lasers[j].y < monsters[i].y + monsters[i].height &&
+         lasers[j].y + lasers[j].height > monsters[i].y) {
+           monsters.splice(i,1);
+           lasers.splice(j,1);
+           score += 10;
+           break;
+      }
+    }
+
+    // Remove monsters off screen
+    if(monsters[i] && monsters[i].y > canvas.height) monsters.splice(i,1);
   }
 }
 
-function draw(){
+function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  // ship
-  ctx.fillStyle='cyan'; ctx.fillRect(ship.x,ship.y,ship.w,ship.h);
-  // lasers
-  ctx.fillStyle='red'; lasers.forEach(l=>ctx.fillRect(l.x,l.y,l.w,l.h));
-  // monsters
-  monsters.forEach(m=>{ ctx.fillStyle='purple'; ctx.fillRect(m.x,m.y,m.w,m.h); ctx.fillStyle='yellow'; ctx.font='14px Arial'; ctx.textAlign='center'; ctx.fillText('Oracle',m.x+m.w/2,m.y-5); });
-  // score
-  ctx.fillStyle='#fff'; ctx.font='20px Arial'; ctx.fillText('Score: '+score,
+
+  // Ship
+  ctx.fillStyle = 'cyan';
+  ctx.fillRect(ship.x, ship.y, ship.width, ship.height);
+
+  // Lasers
+  ctx.fillStyle = 'red';
+  lasers.forEach(l => ctx.fillRect(l.x, l.y, l.width, l.height));
+
+  // Monsters
+  monsters.forEach(m => {
+    ctx.fillStyle = 'purple';
+    ctx.fillRect(m.x, m.y, m.width, m.height);
+    ctx.fillStyle = 'yellow';
+    ctx.font = '14px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Oracle', m.x + m.width/2, m.y - 5);
+  });
+
+  // Score
+  ctx.fillStyle = '#fff';
+  ctx.font = '20px Arial';
+  ctx.fillText('Score: ' + score, 10, 30);
+}
+
+// Game loop
+let spawnTimer = 0;
+function loop(){
+  update();
+  draw();
+  spawnTimer += 16;
+  if(spawnTimer > 2000){ spawnMonster(); spawnTimer = 0; }
+  requestAnimationFrame(loop);
+}
+loop();
+
+// Restart
+document.getElementById('restartBtn').addEventListener('click', ()=>{
+  monsters.length = 0;
+  lasers.length = 0;
+  score = 0;
+  ship.x = 175;
+  gameOver = false;
+  document.getElementById('restartBtn').style.display = 'none';
+});
+</script>
+</body>
+</html>
