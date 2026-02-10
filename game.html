@@ -1,154 +1,91 @@
-<!DOCTYPE html>
-<html>
+<!DOCTYPE html><html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>Catch The Oracle</title>
 <style>
-body{margin:0;background:black;text-align:center;color:white;overflow:hidden}
-
-/* MENU */
-#menu{
-position:absolute;width:100%;height:100%;
-display:flex;justify-content:center;align-items:center;
-}
-
-#playImage{
-width:160px;
-cursor:pointer;
-}
-
-/* SPLASH */
-#grialo{
-position:absolute;width:100%;height:100%;
-display:none;justify-content:center;align-items:center;
-font-size:40px;color:white;
-animation:blink 1s infinite alternate;
-}
-@keyframes blink{from{opacity:0.5}to{opacity:1}}
-
-canvas{display:none;margin:auto;background:black}
+body { margin:0; overflow:hidden; background:black; }
+canvas { display:block; margin:auto; background:black; }
+#menu { position:absolute; top:40%; width:100%; text-align:center; color:white; font-size:32px; }
+#playBtn { font-size:20px; padding:10px 20px; margin-left:10px; cursor:pointer; }
+#credit { position:absolute; bottom:10px; width:100%; text-align:center; color:white; }
 </style>
 </head>
 <body>
-
 <div id="menu">
-<img src="images/title.png" id="playImage">
+<img src="images/title.png" width="300"><br>
+<button id="playBtn">Play</button>
 </div>
-
-<div id="grialo">grialo</div>
-
-<canvas id="game" width="400" height="600"></canvas>
-
+<div id="credit">by rey88</div>
+<canvas id="gameCanvas" width="400" height="600"></canvas>
 <script>
-const canvas=document.getElementById("game");
-const ctx=canvas.getContext("2d");
-const playImage=document.getElementById("playImage");
-const menu=document.getElementById("menu");
-const grialo=document.getElementById("grialo");
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const menu = document.getElementById('menu');let gameRunning=false; let score=0;
 
-let gameStarted=false;
-let score=0;
-let best=localStorage.getItem("best")||0;
+let player = { x:180, y:520, w:60, h:60 }; let monsters=[]; let bullets=[]; let planets=[];
 
-/* SHIP */
-const ship={x:150,y:500,w:90,h:90};
-const shipImg=new Image();
-shipImg.src="images/pesawat-logo.png";
+const shipImg = new Image(); shipImg.src='images/ship.png'; const monsterImg = new Image(); monsterImg.src='images/monster.png';
 
-/* MONSTER */
-const monsters=[];
-const monsterImg=new Image();
-monsterImg.src="images/monster-logo.png";
+// create moving planets for(let i=0;i<5;i++){ planets.push({ x:Math.random()*400, y:Math.random()*600, r:20+Math.random()*30, speed:0.2+Math.random()*0.5 }); }
 
-/* LASER */
-const lasers=[];
+function spawnMonster(){ monsters.push({ x:Math.random()*360, y:-60, w:50, h:50, speed:1+Math.random()*1 }); } setInterval(()=>{ if(gameRunning && monsters.length<3) spawnMonster(); },1200);
 
-/* PLAY CLICK */
-playImage.onclick=()=>{
-menu.style.display="none";
-grialo.style.display="flex";
-setTimeout(()=>{
-grialo.style.display="none";
-canvas.style.display="block";
-if(!gameStarted){gameStarted=true;loop();}
-},2000);
-};
+function shoot(){ bullets.push({ x:player.x+25, y:player.y, speed:6 }); }
 
-/* DRAG CONTROL */
-let dragging=false;
-canvas.addEventListener("touchstart",()=>{dragging=true});
-canvas.addEventListener("touchmove",e=>{
-if(dragging){
-let r=canvas.getBoundingClientRect();
-ship.x=e.touches[0].clientX-r.left-ship.w/2;
-}
-});
-canvas.addEventListener("touchend",()=>{dragging=false});
+canvas.addEventListener('touchmove', e=>{ let rect=canvas.getBoundingClientRect(); player.x = e.touches[0].clientX - rect.left - 30; });
 
-/* SHOOT AUTO */
-setInterval(()=>{lasers.push({x:ship.x+ship.w/2,y:ship.y});},500);
+canvas.addEventListener('click', shoot);
 
-/* SPAWN MONSTER */
-function spawn(){
-let count=Math.min(2+Math.floor(score/1000),5);
-if(monsters.length>=count) return;
+function update(){ ctx.clearRect(0,0,400,600);
 
-monsters.push({
-x:Math.random()*320,
-y:-80,
-dx:Math.random()<0.5?-1.5:1.5
-});
-}
-
-/* UPDATE */
-function update(){
-if(Math.random()<0.01) spawn();
-
-lasers.forEach(l=>l.y-=6);
-
-monsters.forEach((m,i)=>{
-m.y+=2;
-m.x+=m.dx;
-if(m.x<0||m.x>320)m.dx*=-1;
-
-lasers.forEach((l,j)=>{
-if(l.x>m.x&&l.x<m.x+80&&l.y>m.y&&l.y<m.y+80){
-monsters.splice(i,1);
-lasers.splice(j,1);
-score+=10;
-if(score>best){best=score;localStorage.setItem("best",best);}
-}
-});
-});
-}
-
-/* DRAW */
-function draw(){
-ctx.clearRect(0,0,400,600);
-
-ctx.drawImage(shipImg,ship.x,ship.y,ship.w,ship.h);
-
-ctx.fillStyle="red";
-lasers.forEach(l=>ctx.fillRect(l.x,l.y,4,20));
-
-monsters.forEach(m=>{
-ctx.drawImage(monsterImg,m.x,m.y,80,80);
+// moving planets background
+planets.forEach(p=>{
+    p.y += p.speed;
+    if(p.y>620){ p.y=-40; p.x=Math.random()*400; }
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle='rgba(120,120,255,0.4)';
+    ctx.fill();
 });
 
-ctx.fillStyle="white";
-ctx.textAlign="center";
-ctx.font="18px Arial";
-ctx.fillText("Score: "+score,canvas.width/2,30);
-ctx.font="14px Arial";
-ctx.fillText("Best: "+best,canvas.width/2,50);
+ctx.drawImage(shipImg,player.x,player.y,player.w,player.h);
+
+bullets.forEach((b,i)=>{
+    b.y -= b.speed;
+    ctx.fillStyle='yellow';
+    ctx.fillRect(b.x,b.y,4,10);
+    if(b.y<0) bullets.splice(i,1);
+});
+
+monsters.forEach((m,mi)=>{
+    m.y += m.speed;
+    ctx.drawImage(monsterImg,m.x,m.y,m.w,m.h);
+
+    if(m.y>600){ monsters.splice(mi,1); }
+
+    bullets.forEach((b,bi)=>{
+        if(b.x>m.x && b.x<m.x+m.w && b.y>m.y && b.y<m.y+m.h){
+            monsters.splice(mi,1);
+            bullets.splice(bi,1);
+            score++;
+        }
+    });
+
+    if(player.x < m.x+m.w && player.x+player.w > m.x && player.y < m.y+m.h && player.y+player.h > m.y){
+        gameRunning=false;
+        alert('Game Over');
+        menu.style.display='block';
+    }
+});
+
+ctx.fillStyle='white';
+ctx.fillText('Score: '+score,150,30);
+
+if(gameRunning) requestAnimationFrame(update);
+
 }
 
-/* LOOP */
-function loop(){
-update();
-draw();
-requestAnimationFrame(loop);
-}
-</script>
+document.getElementById('playBtn').onclick=function(){ score=0; monsters=[]; bullets=[]; menu.style.display='none'; gameRunning=true; update(); } </script>
 
 </body>
 </html>
