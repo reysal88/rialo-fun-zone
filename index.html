@@ -94,28 +94,18 @@
     .footer-right img {
       margin-left: 5px;
     }
-  }
-  .typing-text {
-  font-size: 2em;              /* ukuran agak besar */
+.typing-text {
+  font-size: 2em;              
   font-weight: bold;
   color: #333;
-  margin-top: 30px;
-  white-space: nowrap;          /* agar tidak wrap */
-  overflow: hidden;             /* sembunyikan teks yang belum muncul */
-  border-right: 4px solid #333; /* garis kursor */
-  width: 0;                     /* mulai dari 0 */
-  animation: typing 3s steps(20, end) forwards, blink-cursor 0.7s step-end infinite;
+  margin: 30px auto 0 auto;   /* auto kiri & kanan supaya di tengah */
+  white-space: nowrap;          
+  overflow: hidden;             
+  border-right: 4px solid #333;
+  width: 0;                     
+  animation: typing 5s steps(16, end) forwards, blink-cursor 0.7s step-end infinite;
+  text-align: center;          /* tambahan supaya teks di tengah */
 }
-
-/* Animasi efek mengetik */
-@keyframes typing {
-  from { width: 0; }
-  to   { width: 16ch; } /* 16 karakter sesuai panjang tulisan */
-}
-
-@keyframes blink-cursor {
-  from, to { border-color: transparent; }
-  50% { border-color: #333; }
 }
 </style>
 </head>
