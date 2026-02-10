@@ -1,236 +1,263 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rialo Game - HP Touch</title>
+<title>Catch The Oracle</title>
+
 <style>
-body { margin:0; padding:0; background:#000; font-family:Arial; color:#fff; text-align:center; overflow:hidden; }
-#menu { position:absolute; width:100%; height:100%; display:flex; justify-content:center; align-items:center; flex-direction:column; }
-#menu h1 { font-size:28px; margin:0; }
-#menu button { font-size:16px; padding:5px 10px; cursor:pointer; margin-top:10px; }
-canvas { display:block; margin:0 auto; background:#000; touch-action:none; }
-#grialo { position:absolute; width:100%; height:100%; display:flex; justify-content:center; align-items:center; font-size:40px; color:white; display:none;
-          text-shadow: 0 0 5px #fff, 0 0 10px #ff0, 0 0 20px #f0f, 0 0 30px #0ff;
-          animation: glow 1s infinite alternate; }
-@keyframes glow {
-  from { text-shadow: 0 0 5px #fff, 0 0 10px #ff0, 0 0 20px #f0f, 0 0 30px #0ff; }
-  to { text-shadow: 0 0 15px #fff, 0 0 30px #ff0, 0 0 50px #f0f, 0 0 80px #0ff; }
+body{
+  margin:0;
+  background:#000;
+  overflow:hidden;
+  font-family:Arial, sans-serif;
+  text-align:center;
+  color:white;
 }
-#gameOverText { position:absolute; width:100%; top:40%; text-align:center; font-size:36px; color:red; display:none; }
-#restartBtn, #backBtn { margin-top:10px; padding:10px 20px; font-size:16px; display:none; cursor:pointer; }
-#by { margin-top:10px; font-size:14px; }
+
+/* MENU */
+#menu{
+  position:absolute;
+  width:100%;
+  height:100%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+}
+
+#playImage{
+  width:80%;
+  max-width:400px;
+  cursor:pointer;
+  animation:pulse 1.5s infinite;
+}
+
+@keyframes pulse{
+  0%{ transform:scale(1); }
+  50%{ transform:scale(1.05); }
+  100%{ transform:scale(1); }
+}
+
+/* SPLASH */
+#grialo{
+  position:absolute;
+  width:100%;
+  height:100%;
+  display:none;
+  justify-content:center;
+  align-items:center;
+  font-size:42px;
+  text-shadow:0 0 10px #fff,0 0 30px #0ff;
+  animation:glow 1s infinite alternate;
+}
+
+@keyframes glow{
+  from{opacity:0.5}
+  to{opacity:1}
+}
+
+/* GAME */
+canvas{
+  display:none;
+  margin:0 auto;
+  touch-action:none;
+}
+
+#gameOver{
+  position:absolute;
+  top:35%;
+  width:100%;
+  font-size:36px;
+  color:red;
+  display:none;
+}
+
+button{
+  padding:10px 20px;
+  margin-top:10px;
+  font-size:16px;
+  display:none;
+}
+
+#by{
+  margin-top:10px;
+  font-size:14px;
+}
 </style>
 </head>
+
 <body>
 
+<!-- MENU -->
 <div id="menu">
-  <h1>CATCH THE ORACLE</h1>
-  <button id="playBtn">Play</button>
+  <img src="images/title.png" id="playImage">
 </div>
 
+<!-- SPLASH -->
 <div id="grialo">grialo</div>
 
-<canvas id="gameCanvas" width="400" height="600" style="display:none;"></canvas>
-<div id="gameOverText">GAME OVER</div>
+<!-- GAME -->
+<canvas id="game" width="400" height="600"></canvas>
+
+<div id="gameOver">GAME OVER</div>
 <button id="backBtn">Back</button>
-<button id="restartBtn">Restart Game</button>
+<button id="restartBtn">Restart</button>
 <div id="by">by rey88</div>
 
 <script>
 const menu = document.getElementById('menu');
-const playBtn = document.getElementById('playBtn');
-const canvas = document.getElementById('gameCanvas');
+const playImage = document.getElementById('playImage');
+const grialo = document.getElementById('grialo');
+const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-const grialoDiv = document.getElementById('grialo');
 const restartBtn = document.getElementById('restartBtn');
 const backBtn = document.getElementById('backBtn');
-const gameOverText = document.getElementById('gameOverText');
+const gameOverText = document.getElementById('gameOver');
 
+let started = false;
 let gameOver = false;
 let score = 0;
-let bestScore = localStorage.getItem('bestScore') || 0;
+let best = localStorage.getItem("best") || 0;
 
-// Ship
-const ship = { x: 150, y: 500, width: 100, height: 100 };
+/* SHIP */
+const ship = { x:150, y:500, w:100, h:100 };
 const shipImg = new Image();
-shipImg.src = 'images/pesawat-logo.png';
+shipImg.src = "images/pesawat-logo.png";
 
-// Laser
-const lasers = [];
-const laserSpeed = 7;
-
-// Monster
+/* MONSTER */
 const monsters = [];
-let monsterSize = 80;
-let monsterSpeed = 2;
-let spawnDelay = 1500;
-let spawnTimer = 0;
 const monsterImg = new Image();
-monsterImg.src = 'images/monster-logo.png';
+monsterImg.src = "images/monster-logo.png";
 
-// Explosions
-const explosions = [];
+/* LASER */
+const lasers = [];
 
-// Stars & planets background
+/* BACKGROUND */
 const stars = [];
-for(let i=0;i<100;i++){ stars.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, size: Math.random()*2+1 }); }
-const planets = [];
-for(let i=0;i<5;i++){ planets.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, size:30+Math.random()*40, dx:(Math.random()*0.5+0.2) }); }
+for(let i=0;i<100;i++)
+  stars.push({x:Math.random()*400,y:Math.random()*600,s:Math.random()*2});
 
-function drawStars(){
-  ctx.fillStyle='white'; 
-  stars.forEach(s=>{
-    ctx.beginPath(); ctx.arc(s.x,s.y,s.size,0,Math.PI*2); ctx.fill(); 
-    s.y+=1; if(s.y>canvas.height)s.y=0;
-  });
-  planets.forEach(p=>{
-    ctx.fillStyle='rgba(100,150,255,0.6)'; 
-    ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill(); 
-    p.x += p.dx; if(p.x>canvas.width)p.x=-p.size;
-  });
+/* START GAME */
+playImage.onclick = ()=>{
+  menu.style.display="none";
+  grialo.style.display="flex";
+
+  setTimeout(()=>{
+    grialo.style.display="none";
+    canvas.style.display="block";
+    if(!started){
+      started=true;
+      loop();
+    }
+  },2000);
+};
+
+/* TOUCH */
+canvas.addEventListener("touchstart", e=>{
+  let r = canvas.getBoundingClientRect();
+  ship.x = e.touches[0].clientX - r.left - ship.w/2;
+  shoot();
+});
+
+/* SHOOT */
+function shoot(){
+  lasers.push({x:ship.x+ship.w/2-2,y:ship.y});
 }
 
-// Monster spawn wave dengan zig-zag
-function spawnMonstersWave(){ 
-  let numMonsters = 2 + Math.floor(score/1000);
-  if(numMonsters>5) numMonsters=5;
-  for(let i=0;i<numMonsters;i++){ 
-    const x = Math.random()*(canvas.width-monsterSize);
-    const direction = Math.random() < 0.5 ? -1 : 1; // zig zag
-    monsters.push({ x:x, y:-monsterSize, width:monsterSize, height:monsterSize, dx:direction*1.5 });
-  } 
+/* SPAWN MONSTER */
+function spawn(){
+  let count = Math.min(2 + Math.floor(score/1000),5);
+  for(let i=0;i<count;i++){
+    monsters.push({
+      x:Math.random()*320,
+      y:-80,
+      dx:Math.random()<0.5?-1.5:1.5
+    });
+  }
 }
 
-// Touch control
-let touchX = null; let dragging=false;
-canvas.addEventListener('touchstart', e=>{ const rect=canvas.getBoundingClientRect(); touchX=e.touches[0].clientX-rect.left; const touchY=e.touches[0].clientY-rect.top; dragging=(touchX>=ship.x && touchX<=ship.x+ship.width && touchY>=ship.y && touchY<=ship.y+ship.height); if(dragging) shootLaser(); });
-canvas.addEventListener('touchmove', e=>{ if(dragging){ const rect=canvas.getBoundingClientRect(); touchX=e.touches[0].clientX-rect.left; ship.x=touchX-ship.width/2; if(ship.x<0)ship.x=0; if(ship.x+ship.width>canvas.width)ship.x=canvas.width-ship.width; }});
-canvas.addEventListener('touchend', e=>{ dragging=false; });
-
-// Shoot
-function shootLaser(){ lasers.push({ x: ship.x + ship.width/2 - 2.5, y: ship.y, width:5, height:20 }); }
-
-// Update
+/* UPDATE */
 function update(){
   if(gameOver) return;
-  drawStars();
 
-  spawnTimer+=16;
-  if(spawnTimer>=spawnDelay){ spawnMonstersWave(); spawnTimer=0; }
+  if(Math.random()<0.02) spawn();
 
-  for(let i=lasers.length-1;i>=0;i--){ lasers[i].y-=laserSpeed; if(lasers[i].y+lasers[i].height<0) lasers.splice(i,1); }
+  lasers.forEach(l=>l.y-=7);
+  monsters.forEach(m=>{
+    m.y+=2;
+    m.x+=m.dx;
+    if(m.x<0||m.x>320)m.dx*=-1;
+  });
 
-  for(let i=monsters.length-1;i>=0;i--){
-    monsters[i].y += monsterSpeed;
-    monsters[i].x += monsters[i].dx; // zig-zag
-    if(monsters[i].x < 0 || monsters[i].x + monsters[i].width > canvas.width) monsters[i].dx*=-1;
-
-    // Collision with ship
-    if(ship.x < monsters[i].x + monsters[i].width && ship.x + ship.width > monsters[i].x &&
-       ship.y < monsters[i].y + monsters[i].height && ship.y + ship.height > monsters[i].y){
-      gameOver=true; 
-      gameOverText.style.display='block'; 
-      restartBtn.style.display='inline-block';
-      backBtn.style.display='inline-block';
-      // Check best score
-      if(score > bestScore){
-        bestScore = score;
-        localStorage.setItem('bestScore', bestScore);
+  monsters.forEach((m,i)=>{
+    if(m.y>600) monsters.splice(i,1);
+    lasers.forEach((l,j)=>{
+      if(l.x>m.x && l.x<m.x+80 && l.y>m.y && l.y<m.y+80){
+        monsters.splice(i,1);
+        lasers.splice(j,1);
+        score+=10;
+        if(score>best){best=score;localStorage.setItem("best",best);}
       }
+    });
+
+    if(ship.x<m.x+80 && ship.x+100>m.x && ship.y<m.y+80){
+      gameOver=true;
+      gameOverText.style.display="block";
+      restartBtn.style.display="inline-block";
+      backBtn.style.display="inline-block";
     }
-
-    // Collision with lasers
-    for(let j=lasers.length-1;j>=0;j--){
-      if(lasers[j].x < monsters[i].x + monsters[i].width && lasers[j].x + lasers[j].width > monsters[i].x &&
-         lasers[j].y < monsters[i].y + monsters[i].height && lasers[j].y + lasers[j].height > monsters[i].y){
-        explosions.push({ x: monsters[i].x+monsterSize/2, y: monsters[i].y+monsterSize/2, radius: 0, maxRadius: 40 });
-        monsters.splice(i,1); lasers.splice(j,1); score+=10; 
-        break;
-      }
-    }
-
-    if(monsters[i] && monsters[i].y>canvas.height) monsters.splice(i,1);
-  }
-
-  // Update explosions
-  explosions.forEach((ex,i)=>{
-    ex.radius += 2;
-    if(ex.radius >= ex.maxRadius) explosions.splice(i,1);
   });
 }
 
-// Draw
+/* DRAW */
 function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  drawStars();
-  ctx.drawImage(shipImg, ship.x, ship.y, ship.width, ship.height);
-  
-  lasers.forEach(l=>{
-    ctx.fillStyle='red';
-    ctx.shadowColor='red';
-    ctx.shadowBlur=10;
-    ctx.fillRect(l.x,l.y,l.width,l.height);
-    ctx.shadowBlur=0;
+  ctx.clearRect(0,0,400,600);
+
+  ctx.fillStyle="white";
+  stars.forEach(s=>{
+    ctx.fillRect(s.x,s.y,s.s,s.s);
+    s.y+=1;
+    if(s.y>600)s.y=0;
   });
+
+  ctx.drawImage(shipImg,ship.x,ship.y,ship.w,ship.h);
+
+  ctx.fillStyle="red";
+  lasers.forEach(l=>ctx.fillRect(l.x,l.y,4,20));
 
   monsters.forEach(m=>{
-    ctx.drawImage(monsterImg,m.x,m.y,m.width,m.height);
-    ctx.fillStyle='yellow';
-    ctx.font='14px Arial';
-    ctx.textAlign='center';
-    ctx.fillText('Oracle', m.x+m.width/2, m.y-5);
+    ctx.drawImage(monsterImg,m.x,m.y,80,80);
   });
 
-  explosions.forEach(ex=>{
-    let gradient = ctx.createRadialGradient(ex.x, ex.y, 0, ex.x, ex.y, ex.radius);
-    gradient.addColorStop(0,'yellow');
-    gradient.addColorStop(0.5,'orange');
-    gradient.addColorStop(1,'red');
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.arc(ex.x, ex.y, ex.radius, 0, Math.PI*2);
-    ctx.fill();
-  });
-
-  // Score & Best Score
-  ctx.fillStyle='#fff';
-  ctx.font='20px Arial';
-  ctx.textAlign='center';
-  ctx.fillText('Score: '+score, canvas.width/2, 30);
-  ctx.font='16px Arial';
-  ctx.fillText('Best: '+bestScore, canvas.width/2, 55);
+  ctx.font="18px Arial";
+  ctx.fillText("Score: "+score,200,30);
+  ctx.font="14px Arial";
+  ctx.fillText("Best: "+best,200,50);
 }
 
-// Loop
-function loop(){ update(); draw(); requestAnimationFrame(loop); }
-loop();
+/* LOOP */
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
 
-// Play button -> show grialo 2 detik, then start game
-playBtn.addEventListener('click', ()=>{
-  menu.style.display='none';
-  grialoDiv.style.display='flex';
-  setTimeout(()=>{
-    grialoDiv.style.display='none';
-    canvas.style.display='block';
-  },2000);
-});
+/* RESTART */
+restartBtn.onclick=()=>{
+  score=0;
+  monsters.length=0;
+  lasers.length=0;
+  gameOver=false;
+  gameOverText.style.display="none";
+  restartBtn.style.display="none";
+  backBtn.style.display="none";
+};
 
-// Restart
-restartBtn.addEventListener('click', ()=>{
-  monsters.length=0; lasers.length=0; score=0; gameOver=false;
-  ship.x = canvas.width/2 - ship.width/2;
-  monsterSpeed = 2;
-  spawnDelay = 1500;
-  gameOverText.style.display='none';
-  restartBtn.style.display='none';
-  backBtn.style.display='none';
-});
-
-// Back to main page
-backBtn.addEventListener('click', ()=>{
-  window.location.href = 'index.html'; // ganti sesuai halaman utama
-});
+/* BACK */
+backBtn.onclick=()=>{
+  location.href="index.html";
+};
 </script>
 
 </body>
