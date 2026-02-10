@@ -6,29 +6,55 @@
 <title>Rialo Game - HP Touch</title>
 <style>
   body { margin:0; padding:0; background:#000; font-family:Arial; color:#fff; text-align:center; }
+  #menu { display:flex; justify-content:center; align-items:center; height:100vh; flex-direction:row; gap:10px; }
+  #menu h1 { font-size: 28px; margin:0; }
+  #menu button { font-size: 16px; padding:5px 10px; cursor:pointer; }
   canvas { display:block; margin:0 auto; background:#000; touch-action: none; }
   #restartBtn { margin-top:10px; padding:10px 20px; font-size:16px; display:none; cursor:pointer; }
+  #by { margin-top:5px; font-size:14px; }
 </style>
 </head>
 <body>
 
-<h1>Rialo: Catch the Oracle</h1>
-<canvas id="gameCanvas" width="400" height="600"></canvas>
+<div id="menu">
+  <h1>CATCH THE ORACLE</h1>
+  <button id="playBtn">Play</button>
+</div>
+
+<canvas id="gameCanvas" width="400" height="600" style="display:none;"></canvas>
 <button id="restartBtn">Restart Game</button>
+<div id="by">by rey88</div>
 
 <script>
 // Canvas
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+// Menu
+const menu = document.getElementById('menu');
+const playBtn = document.getElementById('playBtn');
+playBtn.addEventListener('click', ()=>{
+  menu.style.display='none';
+  canvas.style.display='block';
+});
+
+// Restart
+const restartBtn = document.getElementById('restartBtn');
+restartBtn.addEventListener('click', ()=>{
+  monsters.length=0; lasers.length=0; score=0; gameOver=false;
+  ship.x = canvas.width/2 - ship.width/2;
+  restartBtn.style.display='none';
+});
+
 // Game variables
 let gameOver = false;
 let score = 0;
+let difficultyTimer = 0;
 
 // Ship
 const ship = { x: 150, y: 500, width: 100, height: 100 };
 const shipImg = new Image();
-shipImg.src = 'images/pesawat-logo.png'; // ubah path sesuai foldermu
+shipImg.src = 'images/pesawat-logo.png';
 
 // Laser
 const lasers = [];
@@ -36,10 +62,10 @@ const laserSpeed = 7;
 
 // Monster
 const monsters = [];
-const monsterSize = 80;
-const monsterSpeed = 2;
+let monsterSize = 80;
+let monsterSpeed = 2;
 const monsterImg = new Image();
-monsterImg.src = 'images/monster-logo.png'; // ubah path sesuai foldermu
+monsterImg.src = 'images/monster-logo.png';
 
 // Touch control
 let touchX = null;
@@ -68,17 +94,25 @@ canvas.addEventListener('touchend', e=>{ dragging=false; });
 // Shoot function
 function shootLaser(){ lasers.push({ x: ship.x + ship.width/2 - 2.5, y: ship.y, width:5, height:20 }); }
 
-// Spawn monster every 1.5s
+// Spawn monster
+let spawnInterval = 1500;
 setInterval(()=>{
   if(!gameOver){
     const x = Math.random()*(canvas.width-monsterSize);
     monsters.push({ x:x, y:-monsterSize, width:monsterSize, height:monsterSize });
   }
-}, 1500);
+}, spawnInterval);
 
 // Update game
 function update(){
   if(gameOver) return;
+
+  // Increase difficulty over time
+  difficultyTimer++;
+  if(difficultyTimer % 600 === 0){ // setiap ~10 detik
+    if(monsterSpeed<6) monsterSpeed += 0.5;
+    if(spawnInterval>500) spawnInterval -= 100;
+  }
 
   // Update lasers
   for(let i=lasers.length-1;i>=0;i--){
@@ -96,7 +130,7 @@ function update(){
        ship.y < monsters[i].y + monsters[i].height &&
        ship.y + ship.height > monsters[i].y){
          gameOver = true;
-         document.getElementById('restartBtn').style.display='inline-block';
+         restartBtn.style.display='inline-block';
     }
 
     // Collision with lasers
@@ -150,13 +184,6 @@ function loop(){
   requestAnimationFrame(loop);
 }
 loop();
-
-// Restart
-document.getElementById('restartBtn').addEventListener('click', ()=>{
-  monsters.length=0; lasers.length=0; score=0;
-  ship.x=150; gameOver=false;
-  document.getElementById('restartBtn').style.display='none';
-});
 </script>
 
 </body>
