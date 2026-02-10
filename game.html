@@ -74,8 +74,14 @@ const stars = [];
 for(let i=0;i<100;i++){ stars.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, size: Math.random()*2+1 }); }
 function drawStars(){ ctx.fillStyle='white'; stars.forEach(s=>{ ctx.beginPath(); ctx.arc(s.x,s.y,s.size,0,Math.PI*2); ctx.fill(); s.y+=1; if(s.y>canvas.height)s.y=0; }); }
 
-// Monster spawn wave
-function spawnMonstersWave(){ const numMonsters = Math.min(3 + Math.floor(score/100), 6); for(let i=0;i<numMonsters;i++){ const x = Math.random()*(canvas.width-monsterSize); monsters.push({ x:x, y:-monsterSize, width:monsterSize, height:monsterSize }); } }
+// Monster spawn wave (2–3 monster tiap wave)
+function spawnMonstersWave(){ 
+  const numMonsters = 2 + Math.floor(Math.random()*2); // 2 atau 3 monster
+  for(let i=0;i<numMonsters;i++){ 
+    const x = Math.random()*(canvas.width-monsterSize); 
+    monsters.push({ x:x, y:-monsterSize, width:monsterSize, height:monsterSize }); 
+  } 
+}
 
 // Touch control
 let touchX = null; let dragging=false;
@@ -94,7 +100,8 @@ function update(){
   spawnTimer+=16;
   if(spawnTimer>=spawnDelay){ spawnMonstersWave(); spawnTimer=0; }
 
-  if(score>=500){ monsterSpeed*=1.05; spawnDelay=Math.max(500, spawnDelay-10); }
+  // Monster speed naik 5% tiap 500 poin
+  if(score>=500 && score % 500 === 0){ monsterSpeed *= 1.05; spawnDelay = Math.max(500, spawnDelay-10); }
 
   for(let i=lasers.length-1;i>=0;i--){ lasers[i].y-=laserSpeed; if(lasers[i].y+lasers[i].height<0) lasers.splice(i,1); }
 
