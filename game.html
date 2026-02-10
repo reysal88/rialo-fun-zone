@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rialo Game - PC Version</title>
+<title>Rialo Game - HP Touch</title>
 <style>
   body { margin:0; padding:0; background:#000; font-family:Arial; color:#fff; text-align:center; }
-  canvas { display:block; margin:0 auto; background:#000; }
+  canvas { display:block; margin:0 auto; background:#000; touch-action: none; }
   #restartBtn { margin-top:10px; padding:10px 20px; font-size:16px; display:none; cursor:pointer; }
 </style>
 </head>
@@ -26,9 +26,9 @@ let gameOver = false;
 let score = 0;
 
 // Ship
-const ship = { x: 175, y: 540, width: 50, height: 50, dx: 0, speed: 5 };
+const ship = { x: 150, y: 500, width: 100, height: 100 };
 const shipImg = new Image();
-shipImg.src = 'images/pesawat-logo.png'; // ubah sesuai folder
+shipImg.src = 'images/pesawat-logo.png'; // ubah path sesuai foldermu
 
 // Laser
 const lasers = [];
@@ -36,37 +36,49 @@ const laserSpeed = 7;
 
 // Monster
 const monsters = [];
-const monsterSize = 40;
+const monsterSize = 80;
 const monsterSpeed = 2;
 const monsterImg = new Image();
-monsterImg.src = 'images/monster-logo.png'; // ubah sesuai folder
+monsterImg.src = 'images/monster-logo.png'; // ubah path sesuai foldermu
 
-// Keyboard controls
-document.addEventListener('keydown', e => {
-  if(e.key==='ArrowLeft') ship.dx=-ship.speed;
-  if(e.key==='ArrowRight') ship.dx=ship.speed;
-  if(e.key===' ') shootLaser();
+// Touch control
+let touchX = null;
+let dragging = false;
+
+canvas.addEventListener('touchstart', e=>{
+  const rect = canvas.getBoundingClientRect();
+  touchX = e.touches[0].clientX - rect.left;
+  const touchY = e.touches[0].clientY - rect.top;
+  dragging = (touchX >= ship.x && touchX <= ship.x+ship.width && touchY >= ship.y && touchY <= ship.y+ship.height);
+  if(dragging) shootLaser();
 });
-document.addEventListener('keyup', e => {
-  if(e.key==='ArrowLeft'||e.key==='ArrowRight') ship.dx=0;
+
+canvas.addEventListener('touchmove', e=>{
+  if(dragging){
+    const rect = canvas.getBoundingClientRect();
+    touchX = e.touches[0].clientX - rect.left;
+    ship.x = touchX - ship.width/2;
+    if(ship.x<0) ship.x=0;
+    if(ship.x+ship.width>canvas.width) ship.x=canvas.width-ship.width;
+  }
 });
 
-// Functions
-function shootLaser(){
-  lasers.push({ x: ship.x + ship.width/2 - 2.5, y: ship.y, width: 5, height: 20 });
-}
-function spawnMonster(){
-  const x = Math.random()*(canvas.width-monsterSize);
-  monsters.push({ x:x, y:-monsterSize, width:monsterSize, height:monsterSize });
-}
+canvas.addEventListener('touchend', e=>{ dragging=false; });
 
+// Shoot function
+function shootLaser(){ lasers.push({ x: ship.x + ship.width/2 - 2.5, y: ship.y, width:5, height:20 }); }
+
+// Spawn monster every 1.5s
+setInterval(()=>{
+  if(!gameOver){
+    const x = Math.random()*(canvas.width-monsterSize);
+    monsters.push({ x:x, y:-monsterSize, width:monsterSize, height:monsterSize });
+  }
+}, 1500);
+
+// Update game
 function update(){
   if(gameOver) return;
-
-  // Update ship
-  ship.x += ship.dx;
-  if(ship.x<0) ship.x=0;
-  if(ship.x+ship.width>canvas.width) ship.x=canvas.width-ship.width;
 
   // Update lasers
   for(let i=lasers.length-1;i>=0;i--){
@@ -79,32 +91,33 @@ function update(){
     monsters[i].y += monsterSpeed;
 
     // Collision with ship
-    if(ship.x<monsters[i].x+monsters[i].width &&
-       ship.x+ship.width>monsters[i].x &&
-       ship.y<monsters[i].y+monsters[i].height &&
-       ship.y+ship.height>monsters[i].y){
+    if(ship.x < monsters[i].x + monsters[i].width &&
+       ship.x + ship.width > monsters[i].x &&
+       ship.y < monsters[i].y + monsters[i].height &&
+       ship.y + ship.height > monsters[i].y){
          gameOver = true;
          document.getElementById('restartBtn').style.display='inline-block';
     }
 
     // Collision with lasers
     for(let j=lasers.length-1;j>=0;j--){
-      if(lasers[j].x<monsters[i].x+monsters[i].width &&
-         lasers[j].x+lasers[j].width>monsters[i].x &&
-         lasers[j].y<monsters[i].y+monsters[i].height &&
-         lasers[j].y+lasers[j].height>monsters[i].y){
+      if(lasers[j].x < monsters[i].x + monsters[i].width &&
+         lasers[j].x + lasers[j].width > monsters[i].x &&
+         lasers[j].y < monsters[i].y + monsters[i].height &&
+         lasers[j].y + lasers[j].height > monsters[i].y){
            monsters.splice(i,1);
            lasers.splice(j,1);
-           score+=10;
+           score += 10;
            break;
       }
     }
 
-    // Remove off-screen
+    // Remove off-screen monsters
     if(monsters[i] && monsters[i].y>canvas.height) monsters.splice(i,1);
   }
 }
 
+// Draw everything
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
@@ -131,22 +144,20 @@ function draw(){
 }
 
 // Game loop
-let spawnTimer = 0;
 function loop(){
   update();
   draw();
-  spawnTimer+=16;
-  if(spawnTimer>2000){ spawnMonster(); spawnTimer=0; }
   requestAnimationFrame(loop);
 }
 loop();
 
-// Restart button
+// Restart
 document.getElementById('restartBtn').addEventListener('click', ()=>{
   monsters.length=0; lasers.length=0; score=0;
-  ship.x=175; gameOver=false;
+  ship.x=150; gameOver=false;
   document.getElementById('restartBtn').style.display='none';
 });
 </script>
+
 </body>
 </html>
