@@ -95,8 +95,8 @@ function drawStars(){
 
 // Monster spawn wave zig-zag
 function spawnMonstersWave(){ 
-  let numMonsters = 2 + Math.floor(score/1000);
-  if(numMonsters>8) numMonsters=8;
+  let numMonsters = 3 + Math.floor(score/500);
+  if(numMonsters>15) numMonsters=15;
   for(let i=0;i<numMonsters;i++){ 
     const x = Math.random()*(canvas.width-monsterSize);
     const direction = Math.random() < 0.5 ? -1 : 1;
