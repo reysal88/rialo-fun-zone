@@ -1,2 +1,2 @@
 # gif-gallery
-Try for newbie
+my first project,I try for contribute on Rialo 
