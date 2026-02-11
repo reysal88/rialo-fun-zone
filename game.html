@@ -232,6 +232,23 @@ restartBtn.addEventListener('click', ()=>{
 backBtn.addEventListener('click', ()=>{
   window.location.href = 'index.html';
 });
+   <script>
+// Keyboard control untuk PC
+document.addEventListener('keydown', e => {
+    if(gameOver) return; // jangan bisa gerak kalau game over
+    const step = 10; // jarak geser pesawat per tekan tombol
+    if(e.key === 'ArrowLeft') {
+        ship.x -= step;
+        if(ship.x < 0) ship.x = 0;
+    }
+    if(e.key === 'ArrowRight') {
+        ship.x += step;
+        if(ship.x + ship.width > canvas.width) ship.x = canvas.width - ship.width;
+    }
+    if(e.key === ' ' || e.code === 'Space') {
+        shootLaser();
+    }
+});     
 </script>
 
 </body>
