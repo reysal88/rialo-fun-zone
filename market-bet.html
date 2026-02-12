@@ -1,99 +1,45 @@
-<!DOCTYPE html>  <html lang="en">  
-<head>  
-<meta charset="UTF-8">  
-<meta name="viewport" content="width=device-width, initial-scale=1.0">  
-<title>Market Bet Fun Stable</title>  
-<style>  
-body { margin:0; font-family:Arial,sans-serif; background:#000; color:#fff;}  
-header { padding:10px 20px; font-size:1.5em;}  
-#wallet { position: fixed; top:10px; right:20px; font-weight:bold;}  
-.market-container { display:flex; flex-wrap:wrap; justify-content:center; margin:60px 10px 10px 10px; gap:15px;}  
-.market-box { background:#1a1a1a; padding:15px; border-radius:8px; width:250px;}  
-.market-box h2 { margin:0 0 10px 0; cursor:pointer;}  
-.bet-row { display:flex; justify-content:space-between; margin-bottom:5px; align-items:center;}  
-.bet-row button { padding:5px 10px; margin-left:5px; cursor:pointer;}  
-#parlay-box, #history-box { background:#222; padding:15px; border-radius:8px; margin:20px; max-height:300px; overflow-y:auto;}  
-#parlay-box h3, #history-box h3 { margin-top:0;}  
-.parlay-item, .history-item { margin-bottom:5px; border-bottom:1px solid #333; padding:5px 0;}  
-input[type="number"] { width:60px;}  
-button:disabled { opacity:0.5; cursor:not-allowed;}  
-.modal { display:none; position:fixed; z-index:100; left:0; top:0; width:100%; height:100%; overflow:auto; background:rgba(0,0,0,0.7);}  
-.modal-content { background:#1a1a1a; margin:10% auto; padding:20px; border-radius:10px; width:300px;}  
-.modal-content label { display:block; margin:5px 0;}  
-.modal-content button { margin-top:10px; padding:5px 10px;}  
-</style>  
-</head>  
-<body>  <header>Market Bet Fun</header>  
-<div id="wallet">Your Credit: <span id="rlo">1000</span> RLO</div>  <div class="market-container" id="markets"></div>  <div id="parlay-box">  
-  <h3>Parlay List (x4 per market)</h3>  
-  <div id="parlay-list"></div>  
-  <label>Amount for Parlay: <input type="number" id="parlay-amount" min="1"></label>  
-  <button id="confirm-parlay" disabled>Confirm Parlay</button>  
-</div>  <div id="history-box">  
-  <h3>History Bet</h3>  
-  <h4>Running</h4>  
-  <div id="history-running"></div>  
-  <h4>Completed</h4>  
-  <div id="history-completed"></div>  
-</div>  <!-- Modal untuk single/parlay -->  <div id="betModal" class="modal">  
-  <div class="modal-content">  
-    <h3>Place Bet</h3>  
-    <label><input type="radio" name="betType" value="single"> Single Bet</label>  
-    <label><input type="radio" name="betType" value="parlay"> Parlay</label>  
-    <div id="singleAmountDiv" style="margin-top:10px; display:none;">  
-      Amount: <input type="number" id="singleAmount" min="1">  
-    </div>  
-    <button id="confirmBet">Confirm</button>  
-  </div>  
-</div>  <script>  
-// --- Wallet & Storage ---  
-let wallet = localStorage.getItem('wallet') ? parseInt(localStorage.getItem('wallet')) : 1000;  
-document.getElementById('rlo').innerText = wallet;  
-  
-let historyCompleted = localStorage.getItem('historyCompleted') ? JSON.parse(localStorage.getItem('historyCompleted')) : [];  
-let historyRunning = localStorage.getItem('historyRunning') ? JSON.parse(localStorage.getItem('historyRunning')) : [];  
-let parlayList = localStorage.getItem('parlayList') ? JSON.parse(localStorage.getItem('parlayList')) : [];  
-  
-function saveState(){  
-  localStorage.setItem('wallet', wallet);  
-  localStorage.setItem('historyCompleted', JSON.stringify(historyCompleted));  
-  localStorage.setItem('historyRunning', JSON.stringify(historyRunning));  
-  localStorage.setItem('parlayList', JSON.stringify(parlayList));  
-}  
-  
-// --- Render ---  
-const historyRunningDiv = document.getElementById('history-running');  
-const historyCompletedDiv = document.getElementById('history-completed');  
-const parlayDiv = document.getElementById('parlay-list');  
-  
-function renderHistory(){  
-  historyRunningDiv.innerHTML=''; historyCompletedDiv.innerHTML='';  
-  historyRunning.forEach(h=>{  
-    const div=document.createElement('div'); div.className='history-item';  
-    div.innerText=h.text; historyRunningDiv.appendChild(div);  
-  });  
-  historyCompleted.forEach(h=>{  
-    const div=document.createElement('div'); div.className='history-item';  
-    div.innerText=h.text; historyCompletedDiv.appendChild(div);  
-  });  
-}  
-  
-function renderParlay(){  
-  parlayDiv.innerHTML='';  
-  parlayList.forEach(p=>{  
-    const div=document.createElement('div');  
-    div.className='parlay-item';  
-    div.innerText=`${p.market} - ${p.direction.toUpperCase()}`;  
-    parlayDiv.appendChild(div);  
-  });  
-  document.getElementById('confirm-parlay').disabled = parlayList.length<3;  
-}  
-  
-renderHistory();  
-renderParlay();  
-  
-// --- Market ---  
-const markets=['BTC','ETH','SOL','BNB','AVAX'];  
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Market Bet Fun</title>
+
+<style>
+body { margin:0; font-family:Arial,sans-serif; background:#000; color:#fff;}
+header { padding:15px; font-size:1.5em;}
+#wallet { position: fixed; top:15px; right:20px; font-weight:bold;}
+.market-container { display:flex; flex-wrap:wrap; justify-content:center; margin:70px 10px; gap:15px;}
+.market-box { background:#1a1a1a; padding:15px; border-radius:8px; width:220px;}
+.market-box h2 { margin:0 0 10px 0;}
+.bet-row { display:flex; justify-content:space-between; align-items:center;}
+.bet-row button { padding:5px 10px; cursor:pointer;}
+</style>
+</head>
+
+<body>
+
+<header>Market Bet Fun</header>
+<div id="wallet">Your Credit: <span id="rlo">1000</span> RLO</div>
+
+<div class="market-container" id="markets"></div>
+
+<script>
+
+// =======================
+// WALLET
+// =======================
+
+let wallet = 1000;
+document.getElementById("rlo").innerText = wallet;
+
+
+// =======================
+// MARKET DATA
+// =======================
+
+const markets = ["BTC","ETH","SOL","BNB","AVAX"];
+
 let marketData = {
   BTC: 0,
   ETH: 0,
@@ -102,7 +48,44 @@ let marketData = {
   AVAX: 0
 };
 
-async function fetchPrices() {
+const marketsDiv = document.getElementById("markets");
+
+
+// =======================
+// RENDER MARKET
+// =======================
+
+function renderMarkets(){
+  marketsDiv.innerHTML = "";
+
+  markets.forEach(m => {
+
+    const box = document.createElement("div");
+    box.className = "market-box";
+
+    const price = marketData[m] ? marketData[m].toFixed(2) : "Loading...";
+
+    box.innerHTML = `
+      <h2>${m} ${price} USD</h2>
+      <div class="bet-row">
+        <span>WILL UP 0.08% IN 2 MIN?</span>
+        <div>
+          <button>YES</button>
+          <button>NO</button>
+        </div>
+      </div>
+    `;
+
+    marketsDiv.appendChild(box);
+  });
+}
+
+
+// =======================
+// BINANCE API
+// =======================
+
+async function fetchPrices(){
   try {
     const res = await fetch("https://api.binance.com/api/v3/ticker/price");
     const data = await res.json();
@@ -113,135 +96,25 @@ async function fetchPrices() {
       if(item.symbol === "SOLUSDT") marketData.SOL = parseFloat(item.price);
       if(item.symbol === "BNBUSDT") marketData.BNB = parseFloat(item.price);
       if(item.symbol === "AVAXUSDT") marketData.AVAX = parseFloat(item.price);
-  }
+    });
 
     renderMarkets();
 
-  
-    console.log("Binance API error");
-  
+  } catch (err) {
+    console.log("API error:", err);
+  }
+}
 
-// jalan pertama kali
-renderMarkets();
-fetchPrices();
 
-// update tiap 2 detik
-setInterval(fetchPrices, 2000);
+// =======================
+// START
+// =======================
+
+renderMarkets();     // tampil langsung
+fetchPrices();       // ambil harga pertama
+setInterval(fetchPrices, 2000); // update tiap 2 detik
+
 </script>
-}  
-  
-function renderMarkets(){  
-  marketsDiv.innerHTML='';  
-  markets.forEach(m=>{  
-    const box=document.createElement('div'); box.className='market-box';  
-    const h2=document.createElement('h2');  
-    h2.innerText=`${m} ${marketData[m].toFixed(2)} USD`;  
-    box.appendChild(h2);  
-  
-    const targetUp=(marketData[m]*1.0008).toFixed(2);  
-    const upRow=document.createElement('div'); upRow.className='bet-row';  
-    const upLabel=document.createElement('span'); upLabel.innerText=`WILL UP TO ${targetUp} IN 2 MIN?`;  
-    const yesBtn=document.createElement('button'); yesBtn.innerText='YES'; yesBtn.onclick=()=>openBetModal(m,'up');  
-    const noBtn=document.createElement('button'); noBtn.innerText='NO'; noBtn.onclick=()=>openBetModal(m,'up');  
-    upRow.appendChild(upLabel); upRow.appendChild(yesBtn); upRow.appendChild(noBtn);  
-    box.appendChild(upRow);  
-  marketsDiv.appendChild(box);  
-  });  
-}  
-  
-// --- Modal ---  
-let currentBetMarket='', currentBetDirection='';  
-const modal=document.getElementById('betModal');  
-const betRadios=document.getElementsByName('betType');  
-const singleAmountDiv=document.getElementById('singleAmountDiv');  
-const singleAmountInput=document.getElementById('singleAmount');  
-  
-betRadios.forEach(r=>r.addEventListener('change',()=>{  
-  singleAmountDiv.style.display=r.value==='single'?'block':'none';  
-}));  
-  
-function openBetModal(market,direction){  
-  currentBetMarket=market; currentBetDirection=direction;  
-  modal.style.display='block';  
-}  
-  
-document.getElementById('confirmBet').onclick=()=>{  
-  const selectedType=Array.from(betRadios).find(r=>r.checked)?.value;  
-  if(!selectedType){ alert('Choose Single or Parlay'); return; }  
-  
-  if(selectedType==='single'){  
-    const amt=parseInt(singleAmountInput.value);  
-    if(isNaN(amt)||amt<=0||amt>wallet){ alert('Invalid amount'); return; }  
-    wallet-=amt; saveState(); document.getElementById('rlo').innerText=wallet;  
-  
-    // Tambah ke running history  
-    const runningBet = {  
-      market: currentBetMarket,  
-      direction: currentBetDirection,  
-      type: 'single',  
-      amount: amt,  
-      startTime: Date.now(),  
-      duration: 5*60*1000,  
-      text:`Single Bet ${currentBetMarket} ${currentBetDirection.toUpperCase()} ${amt} RLO`  
-    };  
-    historyRunning.push(runningBet);  
-    saveState(); renderHistory();  
-  
-    // Pending 5 menit  
-    setTimeout(()=>{  
-      const winAmt = amt*2; // x2 multiplier  
-      wallet += winAmt;  
-      historyCompleted.push({...runningBet, text:`Single Bet ${currentBetMarket} ${currentBetDirection.toUpperCase()} Won ${winAmt} RLO`});  
-      historyRunning = historyRunning.filter(b=>b!==runningBet);  
-      saveState(); renderHistory(); document.getElementById('rlo').innerText=wallet;  
-    }, runningBet.duration);  
-  } else if(selectedType==='parlay'){  
-    // Tambah ke parlay list  
-    if(!parlayList.find(p=>p.market===currentBetMarket)){  
-      parlayList.push({market:currentBetMarket,direction:currentBetDirection});  
-      saveState(); renderParlay();  
-    }  
-  }  
-  modal.style.display='none';  
-};  
-window.onclick=function(event){ if(event.target==modal){ modal.style.display='none'; } };  
-  
-// --- Parlay Confirm ---  
-document.getElementById('confirm-parlay').onclick=()=>{  
-  const amt=parseInt(document.getElementById('parlay-amount').value);  
-  if(isNaN(amt)||amt<=0||amt>wallet){ alert('Invalid amount'); return; }  
-  wallet-=amt; document.getElementById('rlo').innerText=wallet;  
-  
-  // Masukkan semua market di parlay ke running  
-  const duration = 5*60*1000;  
-  parlayList.forEach(p=>{  
-    const runningBet = {  
-      market:p.market,  
-      direction:p.direction,  
-      type:'parlay',  
-      amount: amt,  
-      multiplier:4,  
-      startTime: Date.now(),  
-      duration: duration,  
-      text:`Parlay ${p.market} ${p.direction.toUpperCase()} ${amt} RLO`  
-    };  
-    historyRunning.push(runningBet);  
-  
-    // Pending check  
-    setTimeout(()=>{  
-      const winAmt = amt*4*parlayList.length; // x4 per market  
-      wallet += winAmt;  
-      historyCompleted.push({...runningBet, text:`Parlay ${p.market} ${p.direction.toUpperCase()} Won ${winAmt} RLO`});  
-      historyRunning = historyRunning.filter(b=>b!==runningBet);  
-      saveState(); renderHistory(); document.getElementById('rlo').innerText=wallet;  
-    }, duration);  
-  });  
-  
-  parlayList=[]; document.getElementById('parlay-amount').value='';  
-  saveState(); renderParlay(); renderHistory();  
-}  
-  
-// --- Start ---  
-fetchPrices(); setInterval(fetchPrices,1000);  
-</script>  </body>  
+
+</body>
 </html>
