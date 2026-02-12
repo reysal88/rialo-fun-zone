@@ -93,7 +93,7 @@ input[type="number"] {
     <h3 id="betTitle"></h3>
     Amount:<br><br>
     <input type="number" id="betAmount" min="1"><br><br>
-    <button onclick="confirmBet()">Confirm Bet (x2)</button>
+    <button onclick="confirmBet()">Confirm Bet</button>
   </div>
 </div>
 
@@ -111,7 +111,6 @@ let currentSide="";
 // =======================
 // LOCAL STORAGE
 // =======================
-
 function saveData(){
   localStorage.setItem("wallet", wallet);
   localStorage.setItem("runningBets", JSON.stringify(runningBets));
@@ -135,7 +134,6 @@ loadData();
 // =======================
 // RENDER MARKETS
 // =======================
-
 function renderMarkets(){
   const container = document.getElementById("markets");
   container.innerHTML="";
@@ -167,7 +165,6 @@ function renderMarkets(){
 // =======================
 // BINANCE API
 // =======================
-
 async function fetchPrices(){
   try{
     const res=await fetch("https://api.binance.com/api/v3/ticker/price");
@@ -190,7 +187,6 @@ async function fetchPrices(){
 // =======================
 // OPEN BET
 // =======================
-
 function openBet(market,side){
   currentMarket=market;
   currentSide=side;
@@ -202,7 +198,6 @@ function openBet(market,side){
 // =======================
 // CONFIRM BET
 // =======================
-
 function confirmBet(){
   const amt=parseInt(document.getElementById("betAmount").value);
 
@@ -234,21 +229,18 @@ function confirmBet(){
 // =======================
 // UPDATE BETS
 // =======================
-
 function updateBets(){
   const runningDiv = document.getElementById("running");
   runningDiv.innerHTML = "";
 
-  // Gunakan loop mundur supaya splice aman
   for(let i = runningBets.length - 1; i >= 0; i--){
     const bet = runningBets[i];
     const remaining = bet.duration - (Date.now() - bet.startTime);
 
     if(remaining <= 0){
-      // Waktu habis, settle bet
       const currentPrice = marketData[bet.market] || 0;
       let win = false;
-      if(bet.side === "YES"){
+      if(bet.side === "UP"){
         win = currentPrice >= bet.entryPrice;
       } else {
         win = currentPrice < bet.entryPrice;
@@ -258,73 +250,38 @@ function updateBets(){
       bet.result = win ? "WIN" : "LOSE";
 
       if(win){
-        wallet += bet.amount * 2;
+        wallet += bet.amount * 2; // payout 2x
         document.getElementById("rlo").innerText = wallet;
       }
 
       completedBets.push(bet);
       runningBets.splice(i, 1);
       saveData();
-      continue; // lanjut ke bet berikutnya
+      continue;
     }
 
-    // Hitung menit dan detik tersisa
     const m = Math.floor(remaining / 60000);
     const s = Math.floor((remaining % 60000) / 1000);
 
     const div = document.createElement("div");
     div.innerText =
-      `${bet.side === "YES" ? "UP" : "DOWN"} ${bet.market} | ${bet.amount} | Entry: ${bet.entryPrice.toFixed(2)} | ${m}:${String(s).padStart(2,'0')}`;
+      `${bet.side} ${bet.market} | ${bet.amount} | Entry: ${bet.entryPrice.toFixed(2)} | ${m}:${String(s).padStart(2,'0')}`;
 
     runningDiv.appendChild(div);
   }
 
-  // Render completed setiap update
-  renderCompleted();
-}
-// =======================
-// SETTLE BET
-// =======================
-
-function settleBet(index){
-  const bet=runningBets[index];
-  const currentPrice=marketData[bet.market];
-
-  let win=false;
-
-  if(bet.side==="UP"){
-    win=currentPrice>bet.entryPrice;
-  }else{
-    win=currentPrice<bet.entryPrice;
-  }
-
-  if(win){
-    wallet+=bet.amount*2;
-    document.getElementById("rlo").innerText=wallet;
-  }
-
-  completedBets.push({
-    ...bet,
-    exitPrice:currentPrice,
-    result:win?"WIN":"LOSE"
-  });
-
-  runningBets.splice(index,1);
-  saveData();
   renderCompleted();
 }
 
 // =======================
 // RENDER COMPLETED
 // =======================
-
 function renderCompleted(){
   const completedDiv=document.getElementById("completed");
   completedDiv.innerHTML="";
 
   completedBets.forEach(bet=>{
     const div=document.createElement("div");
-
     div.innerHTML=`
       <b>${bet.side} ${bet.market}</b><br>
       Entry: ${bet.entryPrice.toFixed(2)}<br>
@@ -333,7 +290,6 @@ function renderCompleted(){
       Result: ${bet.result}
       <hr>
     `;
-
     completedDiv.appendChild(div);
   });
 }
