@@ -135,32 +135,25 @@ loadData();
 // RENDER MARKET
 // =======================
 
-function renderMarkets(){
-  const marketsDiv = document.getElementById("markets");
-  marketsDiv.innerHTML="";
+function renderCompleted(){
+  const completedDiv=document.getElementById("completed");
+  completedDiv.innerHTML="";
 
-  markets.forEach(m=>{
-    const price = marketData[m];
-    const target = price ? (price*1.0008).toFixed(2) : "...";
+  completedBets.forEach(bet=>{
+    const div=document.createElement("div");
 
-    const box=document.createElement("div");
-    box.className="market-box";
-
-    box.innerHTML=`
-      <h3>${m} ${price?price.toFixed(2):"Loading..."} USD</h3>
-      <div class="bet-row">
-        <button onclick="openBet('${m}','YES')">YES</button>
-        <button onclick="openBet('${m}','NO')">NO</button>
-      </div>
-      <div style="margin-top:5px;font-size:12px;">
-        Target: ${target}
-      </div>
+    div.innerHTML=`
+      <b>${bet.side==="YES"?"UP":"DOWN"} ${bet.market}</b><br>
+      Amount: ${bet.amount}<br>
+      Entry: ${bet.entryPrice.toFixed(2)}<br>
+      Exit: ${bet.exitPrice ? bet.exitPrice.toFixed(2) : "-"}<br>
+      Result: ${bet.result}
+      <hr>
     `;
 
-    marketsDiv.appendChild(box);
+    completedDiv.appendChild(div);
   });
 }
-
 // =======================
 // BINANCE API
 // =======================
