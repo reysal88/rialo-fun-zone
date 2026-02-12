@@ -52,6 +52,7 @@ input[type="number"] {
   padding:5px;
 }
 
+/* Modal styles */
 .modal {
   display:none;
   position:fixed;
@@ -69,6 +70,12 @@ input[type="number"] {
   width:300px;
   border-radius:8px;
   text-align:center;
+}
+
+.modal-content button {
+  padding:5px 12px;
+  margin:5px;
+  cursor:pointer;
 }
 </style>
 </head>
@@ -93,11 +100,22 @@ input[type="number"] {
   <div id="completed"></div>
 </div>
 
+<!-- Modal Bet -->
 <div id="betModal" class="modal">
   <div class="modal-content">
     <h3 id="betTitle"></h3>
     Amount: <input type="number" id="betAmount" min="1"><br><br>
     <button onclick="confirmBet()">Confirm Bet (x2)</button>
+  </div>
+</div>
+
+<!-- Modal Confirm Delete -->
+<div id="confirmModal" class="modal">
+  <div class="modal-content">
+    <h3>Are you sure?</h3>
+    <p>Do you want to delete all completed bets?</p>
+    <button onclick="deleteAllCompleted()">Yes</button>
+    <button onclick="closeConfirmModal()">No</button>
   </div>
 </div>
 
@@ -183,7 +201,8 @@ async function fetchPrices(){
 function openBet(market,side){
   currentMarket=market;
   currentSide=side;
-  document.getElementById("betTitle").innerText = side+" "+market;
+  document.getElementById("betTitle").innerText=
+    side+" "+market;
   document.getElementById("betModal").style.display="block";
 }
 
@@ -286,20 +305,29 @@ function renderCompleted(){
 }
 
 // =======================
-// CLEAR COMPLETED WITH CONFIRMATION
+// DELETE COMPLETED
 // =======================
 function clearCompleted() {
-  if(confirm("Are you sure you want to delete all completed bets?")) {
-    completedBets = [];
-    saveData();
-    renderCompleted();
-  }
+  document.getElementById("confirmModal").style.display = "block";
 }
 
-window.onclick=function(e){
-  if(e.target.id==="betModal"){
-    document.getElementById("betModal").style.display="none";
-  }
+function closeConfirmModal() {
+  document.getElementById("confirmModal").style.display = "none";
+}
+
+function deleteAllCompleted() {
+  completedBets = [];
+  saveData();
+  renderCompleted();
+  closeConfirmModal();
+}
+
+// =======================
+// CLOSE MODAL ON CLICK OUTSIDE
+// =======================
+window.onclick = function(e){
+  if(e.target.id==="betModal"){ document.getElementById("betModal").style.display="none"; }
+  if(e.target.id==="confirmModal"){ document.getElementById("confirmModal").style.display="none"; }
 };
 
 fetchPrices();
