@@ -11,7 +11,7 @@ header {padding:10px 20px; font-size:1.5em;}
 .market-container {display:flex; flex-wrap:wrap; justify-content:center; margin:60px 10px 10px 10px; gap:15px;}
 .market-box {background:#1a1a1a; padding:15px; border-radius:8px; width:250px;}
 .market-box h2 {margin:0 0 10px 0; cursor:pointer;}
-.bet-row {display:flex; justify-content:space-between; margin-bottom:5px; align-items:center;}
+.bet-row {display:flex; justify-content:space-between; margin-bottom:5px; align-items:center; flex-wrap:wrap;}
 .bet-row button {padding:5px 10px; margin-left:5px; cursor:pointer;}
 #parlay-box, #history-box {background:#222; padding:15px; border-radius:8px; margin:20px; max-height:300px; overflow-y:auto;}
 #parlay-box h3, #history-box h3 {margin-top:0;}
@@ -136,11 +136,11 @@ async function fetchPrices(){
   try{
     const res=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,binancecoin,avalanche-2&vs_currencies=usd');
     const data=await res.json();
-    if(data.bitcoin) marketData.BTC=parseFloat(data.bitcoin.usd);
-    if(data.ethereum) marketData.ETH=parseFloat(data.ethereum.usd);
-    if(data.solana) marketData.SOL=parseFloat(data.solana.usd);
-    if(data.binancecoin) marketData.BNB=parseFloat(data.binancecoin.usd);
-    if(data['avalanche-2']) marketData.AVAX=parseFloat(data['avalanche-2'].usd);
+    marketData.BTC = data.bitcoin ? parseFloat(data.bitcoin.usd) : 0;
+    marketData.ETH = data.ethereum ? parseFloat(data.ethereum.usd) : 0;
+    marketData.SOL = data.solana ? parseFloat(data.solana.usd) : 0;
+    marketData.BNB = data.binancecoin ? parseFloat(data.binancecoin.usd) : 0;
+    marketData.AVAX = data['avalanche-2'] ? parseFloat(data['avalanche-2'].usd) : 0;
     renderMarkets();
   }catch(err){ console.error('Fetch harga gagal:',err);}
 }
@@ -148,16 +148,17 @@ async function fetchPrices(){
 function renderMarkets(){
   marketsDiv.innerHTML='';
   markets.forEach(m=>{
-    const box=document.createElement('div'); box.className='market-box';
-    const h2=document.createElement('h2');
-    h2.innerText=`${m} ${marketData[m].toFixed(2)} USD`;
+    const price = marketData[m];
+    const box = document.createElement('div'); box.className='market-box';
+    const h2 = document.createElement('h2');
+    h2.innerText = price>0 ? `${m} ${price.toFixed(2)} USD` : `${m} Loading...`;
     box.appendChild(h2);
 
-    const targetUp=(marketData[m]*1.0008).toFixed(2); // 0.08%
-    const upRow=document.createElement('div'); upRow.className='bet-row';
-    const upLabel=document.createElement('span'); upLabel.innerText=`WILL UP TO ${targetUp} IN 1 MIN?`;
-    const yesBtn=document.createElement('button'); yesBtn.innerText='YES'; yesBtn.onclick=()=>openBetModal(m,'up');
-    const noBtn=document.createElement('button'); noBtn.innerText='NO'; noBtn.onclick=()=>openBetModal(m,'down');
+    const targetUp = price>0 ? (price*1.0008).toFixed(2) : '0.00';
+    const upRow = document.createElement('div'); upRow.className='bet-row';
+    const upLabel = document.createElement('span'); upLabel.innerText=`WILL UP TO ${targetUp} IN 1 MIN?`;
+    const yesBtn = document.createElement('button'); yesBtn.innerText='YES'; yesBtn.onclick=()=>openBetModal(m,'up');
+    const noBtn = document.createElement('button'); noBtn.innerText='NO'; noBtn.onclick=()=>openBetModal(m,'down');
     upRow.appendChild(upLabel); upRow.appendChild(yesBtn); upRow.appendChild(noBtn);
     box.appendChild(upRow);
 
@@ -193,13 +194,7 @@ document.getElementById('confirmBet').onclick=()=>{
     if(isNaN(amt)||amt<=0||amt>wallet){ alert('Invalid amount'); return; }
     wallet-=amt; saveState(); document.getElementById('rlo').innerText=wallet;
 
-    const runningBet = {
-      type:'single',
-      multiplier:2,
-      entries:[entry],
-      startTime: timestamp,
-      duration: 60*1000
-    };
+    const runningBet = {type:'single', multiplier:2, entries:[entry], startTime: timestamp, duration: 60*1000};
     historyRunning.push(runningBet);
     saveState(); renderHistory();
 
@@ -229,17 +224,10 @@ document.getElementById('confirm-parlay').onclick=()=>{
   const duration = 60*1000;
   const parlayId = Date.now();
   const entries = parlayList.map(p=>p.entry);
-  const runningBet = {
-    type:'parlay',
-    multiplier: 2*parlayList.length,
-    entries,
-    startTime: parlayId,
-    duration
-  };
+  const runningBet = {type:'parlay', multiplier: 2*parlayList.length, entries, startTime: parlayId, duration};
   historyRunning.push(runningBet);
 
   setTimeout(()=>{
-    // Check parlay win/lose
     const anyWrong = entries.some(e=>e.choice!=='YES'); // simple simulate
     const result = anyWrong ? 'LOSE' : 'WIN';
     const winAmt = result==='WIN' ? amt*2*parlayList.length : 0;
