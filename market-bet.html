@@ -9,13 +9,62 @@
 body { margin:0; font-family:Arial; background:#000; color:#fff;}
 header { padding:15px; font-size:1.5em;}
 #wallet { position:fixed; top:15px; right:20px; font-weight:bold;}
-.market-container { display:flex; flex-wrap:wrap; justify-content:center; margin:70px 10px; gap:15px;}
-.market-box { background:#1a1a1a; padding:15px; border-radius:8px; width:240px;}
-.bet-row { display:flex; justify-content:space-between; align-items:center; margin-top:10px;}
-.bet-row button { padding:5px 10px; cursor:pointer;}
-#parlay-box, #history-box { background:#111; margin:20px; padding:15px; border-radius:8px;}
-.modal { display:none; position:fixed; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.8);}
-.modal-content { background:#222; margin:15% auto; padding:20px; width:300px; border-radius:8px;}
+.market-container { 
+  display:flex; 
+  flex-wrap:wrap; 
+  justify-content:center; 
+  margin:70px 10px; 
+  gap:15px;
+}
+.market-box { 
+  background:#1a1a1a; 
+  padding:15px; 
+  border-radius:8px; 
+  width:240px;
+}
+
+.bet-row {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  text-align:center;
+}
+
+.bet-row span {
+  flex:1;
+  min-width:120px;
+}
+
+.bet-row button {
+  padding:5px 10px;
+  cursor:pointer;
+}
+
+#parlay-box, #history-box {
+  background:#111;
+  margin:20px;
+  padding:15px;
+  border-radius:8px;
+}
+
+.modal {
+  display:none;
+  position:fixed;
+  left:0;
+  top:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.8);
+}
+
+.modal-content {
+  background:#222;
+  margin:15% auto;
+  padding:20px;
+  width:300px;
+  border-radius:8px;
+}
 </style>
 </head>
 
@@ -41,9 +90,16 @@ header { padding:15px; font-size:1.5em;}
 
 <div id="betModal" class="modal">
   <div class="modal-content">
-    <h3>Place Bet</h3>
-    <label><input type="radio" name="betType" value="single"> Single</label>
-    <label><input type="radio" name="betType" value="parlay"> Parlay</label>
+    <h3 id="betTitle"></h3>
+
+    <label>
+      <input type="radio" name="betType" value="single"> Single
+    </label>
+
+    <label>
+      <input type="radio" name="betType" value="parlay"> Parlay
+    </label>
+
     <div id="singleDiv" style="display:none; margin-top:10px;">
       Amount: <input type="number" id="betAmount" min="1">
       <button id="confirmSingle">Confirm</button>
@@ -57,33 +113,43 @@ const markets = ["BTC","ETH","SOL","BNB","AVAX"];
 let marketData = {BTC:0,ETH:0,SOL:0,BNB:0,AVAX:0};
 let wallet = 1000;
 let parlayList = [];
+let currentMarket = "";
+let currentSide = "";
 
 document.getElementById("rlo").innerText = wallet;
 const marketsDiv = document.getElementById("markets");
 const parlayDiv = document.getElementById("parlay-list");
+
+// ========================
+// RENDER MARKET
+// ========================
 
 function renderMarkets(){
   marketsDiv.innerHTML = "";
 
   markets.forEach(m=>{
     const price = marketData[m];
-    const target = price ? (price*1.0008).toFixed(2) : "...";
+    const target = price ? (price * 1.0008).toFixed(2) : "...";
 
     const box = document.createElement("div");
     box.className = "market-box";
 
     box.innerHTML = `
-      <h3>${m} ${price?price.toFixed(2):"Loading..."} USD</h3>
+      <h3>${m} ${price ? price.toFixed(2) : "Loading..."} USD</h3>
       <div class="bet-row">
-        <button onclick="openBet('${m}','yes')">YES</button>
+        <button onclick="openBet('${m}','YES')">YES</button>
         <span>WILL UP TO ${target} ?</span>
-        <button onclick="openBet('${m}','no')">NO</button>
+        <button onclick="openBet('${m}','NO')">NO</button>
       </div>
     `;
 
     marketsDiv.appendChild(box);
   });
 }
+
+// ========================
+// BINANCE API
+// ========================
 
 async function fetchPrices(){
   try{
@@ -104,50 +170,94 @@ async function fetchPrices(){
   }
 }
 
-let currentMarket="", currentSide="";
+// ========================
+// OPEN BET MODAL
+// ========================
 
 function openBet(market,side){
   currentMarket = market;
   currentSide = side;
+
+  document.getElementById("betTitle").innerText =
+    market + " - " + side;
+
   document.getElementById("betModal").style.display="block";
 }
 
-document.getElementsByName("betType").forEach(r=>{
-  r.addEventListener("change",()=>{
-    document.getElementById("singleDiv").style.display =
-      r.value==="single"?"block":"none";
+// ========================
+// RADIO CONTROL
+// ========================
+
+const betRadios = document.querySelectorAll('input[name="betType"]');
+const singleDiv = document.getElementById("singleDiv");
+
+betRadios.forEach(radio=>{
+  radio.addEventListener("change", function(){
+
+    if(this.value==="single"){
+      singleDiv.style.display="block";
+    } else {
+      singleDiv.style.display="none";
+
+      if(!parlayList.find(p=>p.market===currentMarket)){
+        parlayList.push({
+          market:currentMarket,
+          side:currentSide
+        });
+        renderParlay();
+      }
+
+      document.getElementById("betModal").style.display="none";
+    }
+
   });
 });
 
-document.getElementById("confirmSingle").onclick = ()=>{
+// ========================
+// CONFIRM SINGLE
+// ========================
+
+document.getElementById("confirmSingle").onclick = function(){
+
   const amount = parseInt(document.getElementById("betAmount").value);
-  if(!amount || amount>wallet){ alert("Invalid amount"); return;}
+
+  if(!amount || amount<=0 || amount>wallet){
+    alert("Invalid amount");
+    return;
+  }
+
   wallet -= amount;
   document.getElementById("rlo").innerText = wallet;
+
   document.getElementById("betModal").style.display="none";
 };
 
-document.querySelector('input[value="parlay"]').addEventListener("change",()=>{
-  if(!parlayList.find(p=>p.market===currentMarket)){
-    parlayList.push({market:currentMarket,side:currentSide});
-    renderParlay();
-  }
-});
+// ========================
+// RENDER PARLAY
+// ========================
 
 function renderParlay(){
   parlayDiv.innerHTML="";
   parlayList.forEach(p=>{
     const div=document.createElement("div");
-    div.innerText=`${p.market} - ${p.side.toUpperCase()}`;
+    div.innerText=p.market + " - " + p.side;
     parlayDiv.appendChild(div);
   });
 }
+
+// ========================
+// CLOSE MODAL
+// ========================
 
 window.onclick=function(e){
   if(e.target.id==="betModal"){
     document.getElementById("betModal").style.display="none";
   }
 };
+
+// ========================
+// START
+// ========================
 
 renderMarkets();
 fetchPrices();
