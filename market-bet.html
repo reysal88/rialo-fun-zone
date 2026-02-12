@@ -118,23 +118,14 @@ function renderMarkets(){
     h2.innerText=`${m} ${marketData[m].toFixed(2)} USD`;  
     box.appendChild(h2);  
   
-    const targetUp=(marketData[m]*1.001).toFixed(2);  
+    const targetUp=(marketData[m]*1.0008).toFixed(2);  
     const upRow=document.createElement('div'); upRow.className='bet-row';  
-    const upLabel=document.createElement('span'); upLabel.innerText=`WILL UP TO ${targetUp} IN 5 MIN?`;  
+    const upLabel=document.createElement('span'); upLabel.innerText=`WILL UP TO ${targetUp} IN 2 MIN?`;  
     const yesBtn=document.createElement('button'); yesBtn.innerText='YES'; yesBtn.onclick=()=>openBetModal(m,'up');  
     const noBtn=document.createElement('button'); noBtn.innerText='NO'; noBtn.onclick=()=>openBetModal(m,'up');  
     upRow.appendChild(upLabel); upRow.appendChild(yesBtn); upRow.appendChild(noBtn);  
     box.appendChild(upRow);  
-  
-    const targetDown=(marketData[m]*0.999).toFixed(2);  
-    const downRow=document.createElement('div'); downRow.className='bet-row';  
-    const downLabel=document.createElement('span'); downLabel.innerText=`WILL UNDER TO ${targetDown} IN 5 MIN?`;  
-    const yesBtnD=document.createElement('button'); yesBtnD.innerText='YES'; yesBtnD.onclick=()=>openBetModal(m,'down');  
-    const noBtnD=document.createElement('button'); noBtnD.innerText='NO'; noBtnD.onclick=()=>openBetModal(m,'down');  
-    downRow.appendChild(downLabel); downRow.appendChild(yesBtnD); downRow.appendChild(noBtnD);  
-    box.appendChild(downRow);  
-  
-    marketsDiv.appendChild(box);  
+  marketsDiv.appendChild(box);  
   });  
 }  
   
