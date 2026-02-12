@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Market Bet Fun 5 Market</title>
+<title>Market Bet Fun Full</title>
 <style>
 body {
   margin: 0;
@@ -49,11 +49,18 @@ header {
   margin-left: 5px;
   cursor: pointer;
 }
-#history {
+#history-box, #parlay-box {
+  background-color: #1a1a1a;
+  padding: 15px;
+  border-radius: 8px;
   margin: 20px;
+  max-height: 300px;
+  overflow-y: auto;
 }
-.history-item {
+.history-item, .parlay-item {
   margin-bottom: 5px;
+  border-bottom: 1px solid #333;
+  padding: 5px 0;
 }
 input[type="number"] {
   width: 60px;
@@ -91,13 +98,16 @@ input[type="number"] {
 <header>Market Bet Fun</header>
 <div id="wallet">Your Credit: <span id="rlo">1000</span> RLO</div>
 
-<div class="market-container" id="markets">
-  <!-- Market box akan di-render JS -->
+<div class="market-container" id="markets"></div>
+
+<div id="parlay-box">
+  <h3>Parlay List (x4 per market)</h3>
+  <div id="parlay-list"></div>
 </div>
 
-<div id="history">
-<h3>History</h3>
-<div id="history-list"></div>
+<div id="history-box">
+  <h3>History Bet</h3>
+  <div id="history-list"></div>
 </div>
 
 <!-- Modal untuk single/parlay -->
@@ -126,17 +136,19 @@ function saveState(){
   localStorage.setItem('parlayList', JSON.stringify(parlayList));
 }
 
+// Market
 const markets = ['BTC','ETH','SOL','BNB','AVAX'];
 let marketData = {
-  BTC: 70000,
-  ETH: 4000,
-  SOL: 150,
-  BNB: 500,
-  AVAX: 90
+  BTC: 0,
+  ETH: 0,
+  SOL: 0,
+  BNB: 0,
+  AVAX: 0
 };
 
 const marketsDiv = document.getElementById('markets');
 const historyDiv = document.getElementById('history-list');
+const parlayDiv = document.getElementById('parlay-list');
 
 function renderHistory(){
   historyDiv.innerHTML = '';
@@ -147,14 +159,43 @@ function renderHistory(){
     historyDiv.appendChild(div);
   });
 }
+function renderParlay(){
+  parlayDiv.innerHTML = '';
+  parlayList.forEach(p=>{
+    const div = document.createElement('div');
+    div.className = 'parlay-item';
+    div.innerText = `${p.market} ${p.direction.toUpperCase()}`;
+    parlayDiv.appendChild(div);
+  });
+}
 renderHistory();
+renderParlay();
 
+// Fetch prices dari CoinGecko
+async function fetchPrices() {
+  try {
+    const res = await fetch(
+      'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,binancecoin,avalanche-2&vs_currencies=usd'
+    );
+    const data = await res.json();
+    marketData = {
+      BTC: parseFloat(data.bitcoin.usd),
+      ETH: parseFloat(data.ethereum.usd),
+      SOL: parseFloat(data.solana.usd),
+      BNB: parseFloat(data.binancecoin.usd),
+      AVAX: parseFloat(data['avalanche-2'].usd)
+    };
+    renderMarkets();
+  } catch(err){
+    console.error('Gagal fetch harga:', err);
+  }
+}
+
+// Simulasi ±0.1% tiap detik supaya bergerak halus
 function simulatePrice(){
-  // simulasikan ±0.1% perubahan per detik
   markets.forEach(m=>{
-    let change = marketData[m] * (Math.random()*0.002 - 0.001); // ±0.1%
-    marketData[m] += change;
-    marketData[m] = parseFloat(marketData[m].toFixed(6));
+    const change = marketData[m]*(Math.random()*0.002-0.001);
+    marketData[m] = parseFloat((marketData[m]+change).toFixed(6));
   });
   renderMarkets();
 }
@@ -168,7 +209,7 @@ function renderMarkets(){
 
     const h2 = document.createElement('h2');
     h2.innerText = `${m} ${marketData[m]} USD`;
-    h2.onclick = ()=> alert(`Chart for ${m}`); // placeholder chart popup
+    h2.onclick = ()=> alert(`Chart for ${m}`); // placeholder chart
     box.appendChild(h2);
 
     const targetUp = (marketData[m]*1.001).toFixed(6);
@@ -195,7 +236,7 @@ function renderMarkets(){
   });
 }
 
-// Modal logic
+// Modal
 let currentBetMarket='', currentBetDirection='';
 function openBetModal(market,direction){
   currentBetMarket = market;
@@ -228,8 +269,8 @@ document.getElementById('confirmBet').onclick = ()=>{
     renderHistory();
   } else if(selectedType==='parlay'){
     parlayList.push({market:currentBetMarket,direction:currentBetDirection});
-    alert('Added to Parlay List (x4 per market)');
     saveState();
+    renderParlay();
   }
   modal.style.display = 'none';
 };
@@ -239,6 +280,7 @@ window.onclick = function(event){
 };
 
 // Update harga tiap 1 detik
+setInterval(fetchPrices,1000);
 setInterval(simulatePrice,1000);
 </script>
 </body>
