@@ -147,9 +147,7 @@ function renderMarkets(){
         <button onclick="openBet('${m}','UP')">UP</button>
         <button onclick="openBet('${m}','DOWN')">DOWN</button>
       </div>
-      <div style="margin-top:5px;font-size:12px;">
-        Target: ${price ? (price*1.0008).toFixed(2) : "..."}
-      </div>
+      <!-- Target dihapus supaya UI lebih bersih -->
     `;
     container.appendChild(box);
   });
