@@ -33,13 +33,8 @@ header { padding:15px; font-size:1.5em;}
 }
 
 .bet-row button {
-  padding:6px 12px;
+  padding:5px 10px;
   cursor:pointer;
-}
-
-button:disabled {
-  opacity:0.5;
-  cursor:not-allowed;
 }
 
 #history {
@@ -54,8 +49,6 @@ input[type="number"] {
   background:#333;
   border:1px solid #555;
   padding:5px;
-  width:100%;
-  margin-bottom:10px;
 }
 
 .modal {
@@ -70,11 +63,10 @@ input[type="number"] {
 
 .modal-content {
   background:#222;
-  margin:20% auto;
+  margin:15% auto;
   padding:20px;
-  width:280px;
+  width:300px;
   border-radius:8px;
-  text-align:center;
 }
 </style>
 </head>
@@ -97,7 +89,7 @@ input[type="number"] {
 <div id="betModal" class="modal">
   <div class="modal-content">
     <h3 id="betTitle"></h3>
-    <input type="number" id="betAmount" placeholder="Enter amount" min="1">
+    Amount: <input type="number" id="betAmount" min="1">
     <button onclick="confirmBet()">Confirm Bet (x2)</button>
   </div>
 </div>
@@ -113,7 +105,10 @@ let completedBets = [];
 let currentMarket="";
 let currentSide="";
 
-// ================= LOCAL STORAGE =================
+
+// =======================
+// LOCAL STORAGE SAVE
+// =======================
 
 function saveData(){
   localStorage.setItem("wallet", wallet);
@@ -136,13 +131,9 @@ function loadData(){
 
 loadData();
 
-// ================= HELPER =================
-
-function isMarketRunning(market){
-  return runningBets.some(bet => bet.market === market);
-}
-
-// ================= RENDER MARKETS =================
+// =======================
+// RENDER MARKET
+// =======================
 
 function renderMarkets(){
   const marketsDiv = document.getElementById("markets");
@@ -150,22 +141,19 @@ function renderMarkets(){
 
   markets.forEach(m=>{
     const price = marketData[m];
-    const disabled = isMarketRunning(m);
+    const target = price ? (price*1.0008).toFixed(2) : "...";
 
     const box=document.createElement("div");
     box.className="market-box";
 
     box.innerHTML=`
-      <h3>${m} ${disabled ? '<span style="color:red;font-size:12px;">LIVE</span>' : ''}</h3>
-      <div style="font-size:18px;margin-bottom:8px;">
-        ${price ? price.toFixed(2) : "Loading..."} USD
-      </div>
-      <div style="margin-bottom:6px;font-size:14px;">
-        WILL UP OR DOWN ?
-      </div>
+      <h3>${m} ${price?price.toFixed(2):"Loading..."} USD</h3>
       <div class="bet-row">
-        <button onclick="openBet('${m}','YES')" ${disabled?'disabled':''}>YES</button>
-        <button onclick="openBet('${m}','NO')" ${disabled?'disabled':''}>NO</button>
+        <button onclick="openBet('${m}','YES')">YES</button>
+        <button onclick="openBet('${m}','NO')">NO</button>
+      </div>
+      <div style="margin-top:5px;font-size:12px;">
+        Target: ${target}
       </div>
     `;
 
@@ -173,7 +161,9 @@ function renderMarkets(){
   });
 }
 
-// ================= FETCH BINANCE =================
+// =======================
+// BINANCE API
+// =======================
 
 async function fetchPrices(){
   try{
@@ -192,17 +182,21 @@ async function fetchPrices(){
   }catch(e){console.log(e);}
 }
 
-// ================= OPEN BET =================
+// =======================
+// OPEN BET
+// =======================
 
 function openBet(market,side){
   currentMarket=market;
   currentSide=side;
-  document.getElementById("betTitle").innerText =
-    (side==="YES"?"UP ":"DOWN ") + market;
+  document.getElementById("betTitle").innerText=
+    market+" - "+side;
   document.getElementById("betModal").style.display="block";
 }
 
-// ================= CONFIRM BET =================
+// =======================
+// CONFIRM BET
+// =======================
 
 function confirmBet(){
   const amt=parseInt(document.getElementById("betAmount").value);
@@ -230,10 +224,11 @@ function confirmBet(){
 
   document.getElementById("betModal").style.display="none";
   document.getElementById("betAmount").value="";
-  renderMarkets();
 }
 
-// ================= UPDATE RUNNING =================
+// =======================
+// UPDATE COUNTDOWN
+// =======================
 
 function updateBets(){
   const runningDiv=document.getElementById("running");
@@ -250,34 +245,31 @@ function updateBets(){
     const m=Math.floor(remaining/60000);
     const s=Math.floor((remaining%60000)/1000);
 
-    const direction = bet.side === "YES"
-      ? '<span style="color:#00ff00;">UP</span>'
-      : '<span style="color:red;">DOWN</span>';
-
     const div=document.createElement("div");
-
-    div.innerHTML=`
-      <b>${direction} ${bet.market} ${bet.entryPrice.toFixed(2)}</b><br>
-      Timer: ${m}:${String(s).padStart(2,'0')}
-      <hr>
-    `;
+    div.innerText=
+      bet.market+" "+bet.side+
+      " | "+bet.amount+
+      " | "+m+":"+String(s).padStart(2,'0');
 
     runningDiv.appendChild(div);
   });
 }
 
-// ================= SETTLE =================
+// =======================
+// SETTLE BET
+// =======================
 
 function settleBet(index){
   const bet=runningBets[index];
   const currentPrice=marketData[bet.market];
+  const target=bet.entryPrice*1.0008;
 
   let win=false;
 
   if(bet.side==="YES"){
-    win=currentPrice>bet.entryPrice;
+    win=currentPrice>=target;
   }else{
-    win=currentPrice<bet.entryPrice;
+    win=currentPrice<target;
   }
 
   if(win){
@@ -287,17 +279,17 @@ function settleBet(index){
 
   completedBets.push({
     ...bet,
-    exitPrice: currentPrice,
-    result: win?"WIN":"LOSE"
+    result:win?"WIN":"LOSE"
   });
 
   runningBets.splice(index,1);
   renderCompleted();
-  renderMarkets();
   saveData();
 }
 
-// ================= COMPLETED =================
+// =======================
+// RENDER COMPLETED
+// =======================
 
 function renderCompleted(){
   const completedDiv=document.getElementById("completed");
@@ -305,30 +297,19 @@ function renderCompleted(){
 
   completedBets.forEach(bet=>{
     const div=document.createElement("div");
-
-    div.innerHTML=`
-      <b>${bet.side==="YES"?"UP":"DOWN"} ${bet.market}</b> | ${bet.amount}<br>
-      Entry: ${bet.entryPrice.toFixed(2)}<br>
-      Exit: ${bet.exitPrice.toFixed(2)}<br>
-      Result: <span style="color:${bet.result==="WIN"?"#00ff00":"red"}">
-      ${bet.result}
-      </span>
-      <hr>
-    `;
-
+    div.innerText=
+      bet.market+" "+bet.side+
+      " | "+bet.amount+
+      " | "+bet.result;
     completedDiv.appendChild(div);
   });
 }
-
-// ================= CLOSE MODAL =================
 
 window.onclick=function(e){
   if(e.target.id==="betModal"){
     document.getElementById("betModal").style.display="none";
   }
 };
-
-// ================= START =================
 
 fetchPrices();
 setInterval(fetchPrices,2000);
