@@ -162,7 +162,7 @@ document.getElementById('confirmBet').onclick=()=>{
       type: 'single',  
       amount: amt,  
       startTime: Date.now(),  
-      duration: 5*60*1000,  
+      duration: 2*60*1000,  
       text:`Single Bet ${currentBetMarket} ${currentBetDirection.toUpperCase()} ${amt} RLO`  
     };  
     historyRunning.push(runningBet);  
@@ -194,7 +194,7 @@ document.getElementById('confirm-parlay').onclick=()=>{
   wallet-=amt; document.getElementById('rlo').innerText=wallet;  
   
   // Masukkan semua market di parlay ke running  
-  const duration = 5*60*1000;  
+  const duration = 2*60*1000;  
   parlayList.forEach(p=>{  
     const runningBet = {  
       market:p.market,  
