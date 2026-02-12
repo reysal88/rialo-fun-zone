@@ -70,13 +70,6 @@ input[type="number"] {
   border-radius:8px;
   text-align:center;
 }
-
-button#clearCompletedBtn {
-  padding:2px 6px;
-  font-size:12px;
-  cursor:pointer;
-  margin-left:10px;
-}
 </style>
 </head>
 
@@ -92,9 +85,10 @@ button#clearCompletedBtn {
   <h4>Running</h4>
   <div id="running"></div>
 
-  <h4>
-    Completed 
-    <button id="clearCompletedBtn" onclick="clearCompleted()">Delete All</button>
+  <h4>Completed 
+    <button onclick="clearCompleted()" style="padding:2px 6px; font-size:12px; cursor:pointer;">
+      Delete
+    </button>
   </h4>
   <div id="completed"></div>
 </div>
@@ -113,8 +107,9 @@ let marketData = {};
 let wallet = 1000;
 let runningBets = [];
 let completedBets = [];
-let currentMarket = "";
-let currentSide = "";
+
+let currentMarket="";
+let currentSide="";
 
 // =======================
 // LOCAL STORAGE
@@ -148,7 +143,7 @@ function renderMarkets(){
 
   markets.forEach(m=>{
     const price = marketData[m];
-    const box = document.createElement("div");
+    const box=document.createElement("div");
     box.className="market-box";
 
     box.innerHTML=`
@@ -167,8 +162,8 @@ function renderMarkets(){
 // =======================
 async function fetchPrices(){
   try{
-    const res = await fetch("https://api.binance.com/api/v3/ticker/price");
-    const data = await res.json();
+    const res=await fetch("https://api.binance.com/api/v3/ticker/price");
+    const data=await res.json();
 
     data.forEach(item=>{
       if(item.symbol==="BTCUSDT") marketData.BTC=parseFloat(item.price);
@@ -186,18 +181,18 @@ async function fetchPrices(){
 // OPEN BET
 // =======================
 function openBet(market,side){
-  currentMarket = market;
-  currentSide = side;
+  currentMarket=market;
+  currentSide=side;
   document.getElementById("betTitle").innerText = side+" "+market;
-  document.getElementById("betModal").style.display = "block";
+  document.getElementById("betModal").style.display="block";
 }
 
 // =======================
 // CONFIRM BET
 // =======================
 function confirmBet(){
-  const amt = parseInt(document.getElementById("betAmount").value);
-  if(!amt || amt <= 0 || amt > wallet){ alert("Invalid amount"); return; }
+  const amt=parseInt(document.getElementById("betAmount").value);
+  if(!amt||amt<=0||amt>wallet){ alert("Invalid amount"); return; }
 
   const entryPrice = marketData[currentMarket];
 
@@ -214,7 +209,7 @@ function confirmBet(){
   });
 
   saveData();
-  document.getElementById("betModal").style.display = "none";
+  document.getElementById("betModal").style.display="none";
   document.getElementById("betAmount").value="";
 }
 
@@ -223,21 +218,21 @@ function confirmBet(){
 // =======================
 function updateBets(){
   const runningDiv = document.getElementById("running");
-  runningDiv.innerHTML = "";
+  runningDiv.innerHTML="";
 
-  for(let i=runningBets.length-1; i>=0; i--){
-    const bet = runningBets[i];
-    const remaining = bet.duration - (Date.now()-bet.startTime);
+  for(let i=runningBets.length-1;i>=0;i--){
+    const bet=runningBets[i];
+    const remaining=bet.duration-(Date.now()-bet.startTime);
 
-    if(remaining <= 0){
+    if(remaining<=0){
       settleBet(i);
       continue;
     }
 
-    const m = Math.floor(remaining/60000);
-    const s = Math.floor((remaining%60000)/1000);
+    const m=Math.floor(remaining/60000);
+    const s=Math.floor((remaining%60000)/1000);
 
-    const div = document.createElement("div");
+    const div=document.createElement("div");
     div.innerText = `${bet.side} ${bet.market} | ${bet.amount} | Entry: ${bet.entryPrice.toFixed(2)} | ${m}:${String(s).padStart(2,'0')}`;
     runningDiv.appendChild(div);
   }
@@ -249,12 +244,12 @@ function updateBets(){
 // SETTLE BET
 // =======================
 function settleBet(index){
-  const bet = runningBets[index];
-  const currentPrice = marketData[bet.market];
+  const bet=runningBets[index];
+  const currentPrice=marketData[bet.market];
 
-  let win = false;
-  if(bet.side==="UP"){ win = currentPrice >= bet.entryPrice; }
-  else { win = currentPrice < bet.entryPrice; }
+  let win=false;
+  if(bet.side==="UP"){ win=currentPrice >= bet.entryPrice; }
+  else { win=currentPrice < bet.entryPrice; }
 
   if(win){ wallet += bet.amount*2; document.getElementById("rlo").innerText = wallet; }
 
@@ -277,7 +272,7 @@ function renderCompleted(){
   completedDiv.innerHTML = "";
 
   completedBets.forEach(bet=>{
-    const div = document.createElement("div");
+    const div=document.createElement("div");
     div.innerHTML = `
       <b>${bet.side} ${bet.market}</b><br>
       Amount: ${bet.amount}<br>
@@ -291,26 +286,22 @@ function renderCompleted(){
 }
 
 // =======================
-// CLEAR COMPLETED
+// CLEAR COMPLETED WITH CONFIRMATION
 // =======================
-function clearCompleted(){
-  completedBets = [];
-  saveData();
-  renderCompleted();
+function clearCompleted() {
+  if(confirm("Are you sure you want to delete all completed bets?")) {
+    completedBets = [];
+    saveData();
+    renderCompleted();
+  }
 }
 
-// =======================
-// MODAL CLOSE
-// =======================
-window.onclick = function(e){
+window.onclick=function(e){
   if(e.target.id==="betModal"){
-    document.getElementById("betModal").style.display = "none";
+    document.getElementById("betModal").style.display="none";
   }
 };
 
-// =======================
-// INIT
-// =======================
 fetchPrices();
 setInterval(fetchPrices,2000);
 setInterval(updateBets,1000);
