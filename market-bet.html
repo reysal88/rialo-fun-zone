@@ -9,31 +9,27 @@
 body { margin:0; font-family:Arial; background:#000; color:#fff;}
 header { padding:15px; font-size:1.5em;}
 #wallet { position:fixed; top:15px; right:20px; font-weight:bold;}
-.market-container { 
-  display:flex; 
-  flex-wrap:wrap; 
-  justify-content:center; 
-  margin:70px 10px; 
+
+.market-container {
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  margin:70px 10px;
   gap:15px;
 }
-.market-box { 
-  background:#1a1a1a; 
-  padding:15px; 
-  border-radius:8px; 
+
+.market-box {
+  background:#1a1a1a;
+  padding:15px;
+  border-radius:8px;
   width:240px;
 }
 
 .bet-row {
   display:flex;
-  align-items:center;
   justify-content:center;
   gap:10px;
-  text-align:center;
-}
-
-.bet-row span {
-  flex:1;
-  min-width:120px;
+  margin-top:10px;
 }
 
 .bet-row button {
@@ -41,11 +37,18 @@ header { padding:15px; font-size:1.5em;}
   cursor:pointer;
 }
 
-#parlay-box, #history-box {
+#history {
   background:#111;
   margin:20px;
   padding:15px;
   border-radius:8px;
+}
+
+input[type="number"] {
+  color:white;
+  background:#333;
+  border:1px solid #555;
+  padding:5px;
 }
 
 .modal {
@@ -75,71 +78,82 @@ header { padding:15px; font-size:1.5em;}
 
 <div class="market-container" id="markets"></div>
 
-<div id="parlay-box">
-<h3>Parlay List</h3>
-<div id="parlay-list"></div>
-</div>
-
-<div id="history-box">
+<div id="history">
 <h3>History</h3>
 <h4>Running</h4>
-<div id="history-running"></div>
+<div id="running"></div>
 <h4>Completed</h4>
-<div id="history-completed"></div>
+<div id="completed"></div>
 </div>
 
 <div id="betModal" class="modal">
   <div class="modal-content">
     <h3 id="betTitle"></h3>
-
-    <label>
-      <input type="radio" name="betType" value="single"> Single
-    </label>
-
-    <label>
-      <input type="radio" name="betType" value="parlay"> Parlay
-    </label>
-
-    <div id="singleDiv" style="display:none; margin-top:10px;">
-      Amount: <input type="number" id="betAmount" min="1">
-      <button id="confirmSingle">Confirm</button>
-    </div>
+    Amount: <input type="number" id="betAmount" min="1">
+    <button onclick="confirmBet()">Confirm Bet (x2)</button>
   </div>
 </div>
 
 <script>
 
 const markets = ["BTC","ETH","SOL","BNB","AVAX"];
-let marketData = {BTC:0,ETH:0,SOL:0,BNB:0,AVAX:0};
+let marketData = {};
 let wallet = 1000;
-let parlayList = [];
-let currentMarket = "";
-let currentSide = "";
+let runningBets = [];
+let completedBets = [];
 
-document.getElementById("rlo").innerText = wallet;
-const marketsDiv = document.getElementById("markets");
-const parlayDiv = document.getElementById("parlay-list");
+let currentMarket="";
+let currentSide="";
 
-// ========================
+
+// =======================
+// LOCAL STORAGE SAVE
+// =======================
+
+function saveData(){
+  localStorage.setItem("wallet", wallet);
+  localStorage.setItem("runningBets", JSON.stringify(runningBets));
+  localStorage.setItem("completedBets", JSON.stringify(completedBets));
+}
+
+function loadData(){
+  const savedWallet = localStorage.getItem("wallet");
+  const savedRunning = localStorage.getItem("runningBets");
+  const savedCompleted = localStorage.getItem("completedBets");
+
+  if(savedWallet) wallet = parseInt(savedWallet);
+  if(savedRunning) runningBets = JSON.parse(savedRunning);
+  if(savedCompleted) completedBets = JSON.parse(savedCompleted);
+
+  document.getElementById("rlo").innerText = wallet;
+  renderCompleted();
+}
+
+loadData();
+
+// =======================
 // RENDER MARKET
-// ========================
+// =======================
 
 function renderMarkets(){
-  marketsDiv.innerHTML = "";
+  const marketsDiv = document.getElementById("markets");
+  marketsDiv.innerHTML="";
 
   markets.forEach(m=>{
     const price = marketData[m];
-    const target = price ? (price * 1.0008).toFixed(2) : "...";
+    const target = price ? (price*1.0008).toFixed(2) : "...";
 
-    const box = document.createElement("div");
-    box.className = "market-box";
+    const box=document.createElement("div");
+    box.className="market-box";
 
-    box.innerHTML = `
-      <h3>${m} ${price ? price.toFixed(2) : "Loading..."} USD</h3>
+    box.innerHTML=`
+      <h3>${m} ${price?price.toFixed(2):"Loading..."} USD</h3>
       <div class="bet-row">
         <button onclick="openBet('${m}','YES')">YES</button>
-        <span>WILL UP TO ${target} ?</span>
         <button onclick="openBet('${m}','NO')">NO</button>
+      </div>
+      <div style="margin-top:5px;font-size:12px;">
+        Target: ${target}
       </div>
     `;
 
@@ -147,14 +161,14 @@ function renderMarkets(){
   });
 }
 
-// ========================
+// =======================
 // BINANCE API
-// ========================
+// =======================
 
 async function fetchPrices(){
   try{
-    const res = await fetch("https://api.binance.com/api/v3/ticker/price");
-    const data = await res.json();
+    const res=await fetch("https://api.binance.com/api/v3/ticker/price");
+    const data=await res.json();
 
     data.forEach(item=>{
       if(item.symbol==="BTCUSDT") marketData.BTC=parseFloat(item.price);
@@ -165,89 +179,131 @@ async function fetchPrices(){
     });
 
     renderMarkets();
-  }catch(e){
-    console.log("API error",e);
-  }
+  }catch(e){console.log(e);}
 }
 
-// ========================
-// OPEN BET MODAL
-// ========================
+// =======================
+// OPEN BET
+// =======================
 
 function openBet(market,side){
-  currentMarket = market;
-  currentSide = side;
-
-  document.getElementById("betTitle").innerText =
-    market + " - " + side;
-
+  currentMarket=market;
+  currentSide=side;
+  document.getElementById("betTitle").innerText=
+    market+" - "+side;
   document.getElementById("betModal").style.display="block";
 }
 
-// ========================
-// RADIO CONTROL
-// ========================
+// =======================
+// CONFIRM BET
+// =======================
 
-const betRadios = document.querySelectorAll('input[name="betType"]');
-const singleDiv = document.getElementById("singleDiv");
-
-betRadios.forEach(radio=>{
-  radio.addEventListener("change", function(){
-
-    if(this.value==="single"){
-      singleDiv.style.display="block";
-    } else {
-      singleDiv.style.display="none";
-
-      if(!parlayList.find(p=>p.market===currentMarket)){
-        parlayList.push({
-          market:currentMarket,
-          side:currentSide
-        });
-        renderParlay();
-      }
-
-      document.getElementById("betModal").style.display="none";
-    }
-
-  });
-});
-
-// ========================
-// CONFIRM SINGLE
-// ========================
-
-document.getElementById("confirmSingle").onclick = function(){
-
-  const amount = parseInt(document.getElementById("betAmount").value);
-
-  if(!amount || amount<=0 || amount>wallet){
+function confirmBet(){
+  const amt=parseInt(document.getElementById("betAmount").value);
+  if(!amt||amt<=0||amt>wallet){
     alert("Invalid amount");
     return;
   }
 
-  wallet -= amount;
-  document.getElementById("rlo").innerText = wallet;
+  const entryPrice = marketData[currentMarket];
+
+  wallet-=amt;
+  document.getElementById("rlo").innerText=wallet;
+
+  const bet={
+    market:currentMarket,
+    side:currentSide,
+    amount:amt,
+    entryPrice:entryPrice,
+    startTime:Date.now(),
+    duration:120000
+  };
+
+  runningBets.push(bet);
+  saveData();
 
   document.getElementById("betModal").style.display="none";
-};
+  document.getElementById("betAmount").value="";
+}
 
-// ========================
-// RENDER PARLAY
-// ========================
+// =======================
+// UPDATE COUNTDOWN
+// =======================
 
-function renderParlay(){
-  parlayDiv.innerHTML="";
-  parlayList.forEach(p=>{
+function updateBets(){
+  const runningDiv=document.getElementById("running");
+  runningDiv.innerHTML="";
+
+  runningBets.forEach((bet,index)=>{
+    const remaining=bet.duration-(Date.now()-bet.startTime);
+
+    if(remaining<=0){
+      settleBet(index);
+      return;
+    }
+
+    const m=Math.floor(remaining/60000);
+    const s=Math.floor((remaining%60000)/1000);
+
     const div=document.createElement("div");
-    div.innerText=p.market + " - " + p.side;
-    parlayDiv.appendChild(div);
+    div.innerText=
+      bet.market+" "+bet.side+
+      " | "+bet.amount+
+      " | "+m+":"+String(s).padStart(2,'0');
+
+    runningDiv.appendChild(div);
   });
 }
 
-// ========================
-// CLOSE MODAL
-// ========================
+// =======================
+// SETTLE BET
+// =======================
+
+function settleBet(index){
+  const bet=runningBets[index];
+  const currentPrice=marketData[bet.market];
+  const target=bet.entryPrice*1.0008;
+
+  let win=false;
+
+  if(bet.side==="YES"){
+    win=currentPrice>=target;
+  }else{
+    win=currentPrice<target;
+  }
+
+  if(win){
+    wallet+=bet.amount*2;
+    document.getElementById("rlo").innerText=wallet;
+  }
+
+  completedBets.push({
+    ...bet,
+    result:win?"WIN":"LOSE"
+  });
+
+  runningBets.splice(index,1);
+  renderCompleted();
+  saveData();
+}
+
+// =======================
+// RENDER COMPLETED
+// =======================
+
+function renderCompleted(){
+  const completedDiv=document.getElementById("completed");
+  completedDiv.innerHTML="";
+
+  completedBets.forEach(bet=>{
+    const div=document.createElement("div");
+    div.innerText=
+      bet.market+" "+bet.side+
+      " | "+bet.amount+
+      " | "+bet.result;
+    completedDiv.appendChild(div);
+  });
+}
 
 window.onclick=function(e){
   if(e.target.id==="betModal"){
@@ -255,13 +311,9 @@ window.onclick=function(e){
   }
 };
 
-// ========================
-// START
-// ========================
-
-renderMarkets();
 fetchPrices();
 setInterval(fetchPrices,2000);
+setInterval(updateBets,1000);
 
 </script>
 
