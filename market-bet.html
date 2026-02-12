@@ -25,8 +25,10 @@ button:disabled { opacity:0.5; cursor:not-allowed;}
 </style>
 </head>
 <body>
+
 <header>Market Bet Fun</header>
 <div id="wallet">Your Credit: <span id="rlo">1000</span> RLO</div>
+
 <div class="market-container" id="markets"></div>
 
 <div id="parlay-box">
@@ -44,7 +46,7 @@ button:disabled { opacity:0.5; cursor:not-allowed;}
   <div id="history-completed"></div>
 </div>
 
-<!-- Modal untuk single/parlay -->
+<!-- Modal -->
 <div id="betModal" class="modal">
   <div class="modal-content">
     <h3>Place Bet</h3>
@@ -62,50 +64,46 @@ button:disabled { opacity:0.5; cursor:not-allowed;}
 let wallet = localStorage.getItem('wallet') ? parseInt(localStorage.getItem('wallet')) : 1000;
 document.getElementById('rlo').innerText = wallet;
 
-let historyRunning = localStorage.getItem('historyRunning') ? JSON.parse(localStorage.getItem('historyRunning')) : [];
 let historyCompleted = localStorage.getItem('historyCompleted') ? JSON.parse(localStorage.getItem('historyCompleted')) : [];
+let historyRunning = localStorage.getItem('historyRunning') ? JSON.parse(localStorage.getItem('historyRunning')) : [];
 let parlayList = localStorage.getItem('parlayList') ? JSON.parse(localStorage.getItem('parlayList')) : [];
 
-function saveState() {
+function saveState(){
   localStorage.setItem('wallet', wallet);
-  localStorage.setItem('historyRunning', JSON.stringify(historyRunning));
   localStorage.setItem('historyCompleted', JSON.stringify(historyCompleted));
+  localStorage.setItem('historyRunning', JSON.stringify(historyRunning));
   localStorage.setItem('parlayList', JSON.stringify(parlayList));
 }
 
-// --- Render History ---
+// --- Render ---
 const historyRunningDiv = document.getElementById('history-running');
 const historyCompletedDiv = document.getElementById('history-completed');
 const parlayDiv = document.getElementById('parlay-list');
 
-function renderHistory() {
-  historyRunningDiv.innerHTML = '';
-  historyCompletedDiv.innerHTML = '';
-
-  historyRunning.forEach(bet => {
-    const div = document.createElement('div');
-    div.className = 'history-item';
-    if (bet.type === 'single') {
-      div.innerText = `Single Bet ${bet.market.toUpperCase()} ${bet.direction.toUpperCase()} ${bet.amount} RLO`;
-    } else if (bet.type === 'parlay') {
-      let text = `Parlay Bet (${bet.amount} RLO)`;
-      bet.markets.forEach(m => {
-        text += `\n${m.direction.toUpperCase()} - ${m.market.toUpperCase()}`;
+function renderHistory(){
+  historyRunningDiv.innerHTML=''; historyCompletedDiv.innerHTML='';
+  historyRunning.forEach(h=>{
+    const div=document.createElement('div'); div.className='history-item';
+    if(h.type==='single'){
+      div.innerText = `Single Bet ${h.market.toUpperCase()} ${h.direction.toUpperCase()} ${h.amount} RLO`;
+    } else if(h.type==='parlay'){
+      let text = `Parlay Bet (${h.amount} RLO)`;
+      h.markets.forEach(m=>{
+        text += `\n${m.market.toUpperCase()} - ${m.direction.toUpperCase()}`;
       });
       div.innerText = text;
     }
     historyRunningDiv.appendChild(div);
   });
 
-  historyCompleted.forEach(bet => {
-    const div = document.createElement('div');
-    div.className = 'history-item';
-    if (bet.type === 'single') {
-      div.innerText = `Single Bet ${bet.market.toUpperCase()} ${bet.direction.toUpperCase()} ${bet.amount} RLO - ${bet.result}`;
-    } else if (bet.type === 'parlay') {
-      let text = `Parlay Bet (${bet.amount} RLO) - ${bet.result}`;
-      bet.markets.forEach(m => {
-        text += `\n${m.direction.toUpperCase()} - ${m.market.toUpperCase()}`;
+  historyCompleted.forEach(h=>{
+    const div=document.createElement('div'); div.className='history-item';
+    if(h.type==='single'){
+      div.innerText = `${h.market.toUpperCase()} ${h.direction.toUpperCase()} ${h.amount} RLO - ${h.result}`;
+    } else if(h.type==='parlay'){
+      let text = `Parlay Bet (${h.amount} RLO) - ${h.result}`;
+      h.markets.forEach(m=>{
+        text += `\n${m.market.toUpperCase()} - ${m.direction.toUpperCase()}`;
       });
       div.innerText = text;
     }
@@ -113,17 +111,19 @@ function renderHistory() {
   });
 }
 
-// --- Render Parlay ---
-function renderParlay() {
-  parlayDiv.innerHTML = '';
-  parlayList.forEach(p => {
-    const div = document.createElement('div');
-    div.className = 'parlay-item';
-    div.innerText = `${p.market.toUpperCase()} - ${p.direction.toUpperCase()}`;
+function renderParlay(){
+  parlayDiv.innerHTML='';
+  parlayList.forEach(p=>{
+    const div=document.createElement('div');
+    div.className='parlay-item';
+    div.innerText=`${p.market} - ${p.direction.toUpperCase()}`;
     parlayDiv.appendChild(div);
   });
-  document.getElementById('confirm-parlay').disabled = parlayList.length < 3;
+  document.getElementById('confirm-parlay').disabled = parlayList.length<3;
 }
+
+renderHistory();
+renderParlay();
 
 // --- Market ---
 const markets=['BTC','ETH','SOL','BNB','AVAX'];
@@ -175,8 +175,7 @@ betRadios.forEach(r=>r.addEventListener('change',()=>{
 }));
 
 function openBetModal(market,direction){
-  currentBetMarket=market;
-  currentBetDirection=direction;
+  currentBetMarket=market; currentBetDirection=direction;
   modal.style.display='block';
 }
 
@@ -187,16 +186,16 @@ document.getElementById('confirmBet').onclick=()=>{
   if(selectedType==='single'){
     const amt=parseInt(singleAmountInput.value);
     if(isNaN(amt)||amt<=0||amt>wallet){ alert('Invalid amount'); return; }
-    wallet-=amt; document.getElementById('rlo').innerText=wallet;
+    wallet-=amt; saveState(); document.getElementById('rlo').innerText=wallet;
 
     const runningBet = {
       betID: Date.now(),
-      type: 'single',
       market: currentBetMarket,
       direction: currentBetDirection,
-      amount: amt,
-      startTime: Date.now(),
-      duration: 2*60*1000
+      type:'single',
+      amount:amt,
+      startTime:Date.now(),
+      duration:2*60*1000
     };
     historyRunning.push(runningBet);
     saveState(); renderHistory();
@@ -204,11 +203,9 @@ document.getElementById('confirmBet').onclick=()=>{
     setTimeout(()=>{
       const winAmt = amt*2;
       wallet += winAmt;
-      runningBet.result = `Won ${winAmt} RLO`;
-      historyCompleted.push(runningBet);
+      historyCompleted.push({...runningBet, result:'WON'});
       historyRunning = historyRunning.filter(b=>b.betID!==runningBet.betID);
-      saveState(); renderHistory();
-      document.getElementById('rlo').innerText=wallet;
+      saveState(); renderHistory(); document.getElementById('rlo').innerText=wallet;
     }, runningBet.duration);
 
   } else if(selectedType==='parlay'){
@@ -217,37 +214,37 @@ document.getElementById('confirmBet').onclick=()=>{
       saveState(); renderParlay();
     }
   }
+
   modal.style.display='none';
 };
-window.onclick = (event)=>{if(event.target===modal) modal.style.display='none';};
 
-// --- Confirm Parlay ---
+window.onclick=function(event){ if(event.target==modal){ modal.style.display='none'; } };
+
+// --- Parlay Confirm ---
 document.getElementById('confirm-parlay').onclick=()=>{
   const amt=parseInt(document.getElementById('parlay-amount').value);
   if(isNaN(amt)||amt<=0||amt>wallet){ alert('Invalid amount'); return; }
   wallet-=amt; document.getElementById('rlo').innerText=wallet;
 
-  const duration=2*60*1000;
+  const duration = 2*60*1000;
   const parlayBet={
     betID: Date.now(),
     type:'parlay',
     amount:amt,
-    startTime: Date.now(),
+    startTime:Date.now(),
     duration:duration,
-    markets:[...parlayList],
+    markets:parlayList.map(p=>({market:p.market,direction:p.direction})),
     multiplier:2
   };
   historyRunning.push(parlayBet);
 
   setTimeout(()=>{
-    const totalMultiplier = parlayBet.markets.length * parlayBet.multiplier;
-    const winAmt = amt * totalMultiplier;
+    let winAmt = amt;
+    parlayBet.markets.forEach(()=>{ winAmt *= 2; }); // x2 per market
     wallet += winAmt;
-    parlayBet.result = `Won ${winAmt} RLO`;
-    historyCompleted.push(parlayBet);
+    historyCompleted.push({...parlayBet, result:'WON'});
     historyRunning = historyRunning.filter(b=>b.betID!==parlayBet.betID);
-    saveState(); renderHistory();
-    document.getElementById('rlo').innerText = wallet;
+    saveState(); renderHistory(); document.getElementById('rlo').innerText=wallet;
   }, duration);
 
   parlayList=[]; document.getElementById('parlay-amount').value='';
@@ -256,7 +253,6 @@ document.getElementById('confirm-parlay').onclick=()=>{
 
 // --- Start ---
 fetchPrices(); setInterval(fetchPrices,1000);
-renderParlay(); renderHistory();
 </script>
 </body>
 </html>
