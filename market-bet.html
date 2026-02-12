@@ -81,11 +81,16 @@ input[type="number"] {
 <div class="market-container" id="markets"></div>
 
 <div id="history">
-<h3>History</h3>
-<h4>Running</h4>
-<div id="running"></div>
-<h4>Completed</h4>
-<div id="completed"></div>
+  <h3>History</h3>
+  <h4>Running</h4>
+  <div id="running"></div>
+
+  <h4>Completed 
+    <button onclick="clearCompleted()" style="padding:2px 6px; font-size:12px; cursor:pointer;">
+      Delete
+    </button>
+  </h4>
+  <div id="completed"></div>
 </div>
 
 <div id="betModal" class="modal">
@@ -288,7 +293,8 @@ window.onclick=function(e){
     document.getElementById("betModal").style.display="none";
   }
 };
-
+<button id="clearCompletedBtn" style="margin-bottom:10px;">Delete All Completed</button>
+<div id="completed"></div>
 fetchPrices();
 setInterval(fetchPrices,2000);
 setInterval(updateBets,1000);
