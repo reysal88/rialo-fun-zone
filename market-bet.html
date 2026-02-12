@@ -94,20 +94,42 @@ renderParlay();
   
 // --- Market ---  
 const markets=['BTC','ETH','SOL','BNB','AVAX'];  
-let marketData={BTC:0,ETH:0,SOL:0,BNB:0,AVAX:0};  
-const marketsDiv=document.getElementById('markets');  
-  
-async function fetchPrices(){  
-  try{  
-    const res=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,binancecoin,avalanche-2&vs_currencies=usd');  
-    const data=await res.json();  
-    if(data.bitcoin) marketData.BTC=parseFloat(data.bitcoin.usd);  
-    if(data.ethereum) marketData.ETH=parseFloat(data.ethereum.usd);  
-    if(data.solana) marketData.SOL=parseFloat(data.solana.usd);  
-    if(data.binancecoin) marketData.BNB=parseFloat(data.binancecoin.usd);  
-    if(data['avalanche-2']) marketData.AVAX=parseFloat(data['avalanche-2'].usd);  
-    renderMarkets();  
-  }catch(err){ console.error('Fetch harga gagal:',err);}  
+<script>
+let marketData = {
+  BTC: 0,
+  ETH: 0,
+  SOL: 0,
+  BNB: 0,
+  AVAX: 0
+};
+
+async function fetchPrices() {
+  try {
+    const res = await fetch("https://api.binance.com/api/v3/ticker/price");
+    const data = await res.json();
+
+    data.forEach(item => {
+      if(item.symbol === "BTCUSDT") marketData.BTC = parseFloat(item.price);
+      if(item.symbol === "ETHUSDT") marketData.ETH = parseFloat(item.price);
+      if(item.symbol === "SOLUSDT") marketData.SOL = parseFloat(item.price);
+      if(item.symbol === "BNBUSDT") marketData.BNB = parseFloat(item.price);
+      if(item.symbol === "AVAXUSDT") marketData.AVAX = parseFloat(item.price);
+    });
+
+    renderMarkets();
+
+  } catch (err) {
+    console.log("Binance API error");
+  }
+}
+
+// jalan pertama kali
+renderMarkets();
+fetchPrices();
+
+// update tiap 2 detik
+setInterval(fetchPrices, 2000);
+</script>
 }  
   
 function renderMarkets(){  
