@@ -28,6 +28,9 @@ input[type="number"] { color:white; background:#333; border:1px solid #555; padd
 /* History text colors */
 .up-text { color:#0f0; font-weight:bold; }
 .down-text { color:#f00; font-weight:bold; }
+
+/* Center list items in parlay modal */
+#parlayMarkets div, #parlayList div { margin:5px 0; text-align:center; }
 </style>
 </head>
 <body>
@@ -62,16 +65,26 @@ input[type="number"] { color:white; background:#333; border:1px solid #555; padd
   </div>
 </div>
 
-<!-- Modal Parlay Bet -->
+<!-- Modal Parlay Bet List -->
 <div id="parlayModal" class="modal">
   <div class="modal-content">
     <h3>Add Parlay Selection</h3>
     <div id="parlayMarkets"></div>
     <h4>Selected:</h4>
-    <div id="parlayList" style="text-align:center;"></div>
+    <div id="parlayList"></div>
     <p>Total X: <span id="parlayMultiple">0</span></p>
-    <button onclick="confirmParlay()">Confirm Parlay</button>
+    <button onclick="openParlayAmountModal()">Confirm Parlay</button>
     <button onclick="cancelParlay()">Cancel Parlay</button>
+  </div>
+</div>
+
+<!-- Modal Parlay Amount -->
+<div id="parlayAmountModal" class="modal">
+  <div class="modal-content">
+    <h3>Enter Parlay Amount</h3>
+    Amount: <input type="number" id="parlayAmountInput" min="1"><br><br>
+    <button onclick="confirmParlayAmount()">Confirm</button>
+    <button onclick="cancelParlayAmount()">Cancel</button>
   </div>
 </div>
 
@@ -188,8 +201,6 @@ function openParlaySelection(){
   container.innerHTML="";
   markets.forEach(m=>{
     const div=document.createElement("div");
-    div.style.marginBottom="5px";
-    div.style.textAlign="center";
     div.innerHTML=`
       ${m}: 
       <button class="up-btn" onclick="selectParlay('${m}','UP')">UP</button>
@@ -219,18 +230,33 @@ function removeParlay(index){
   tempParlay.splice(index,1);
   updateParlayList();
 }
-function confirmParlay(){
+
+// =======================
+// PARLAY AMOUNT MODAL
+// =======================
+function openParlayAmountModal(){
   if(tempParlay.length<3){ alert("Minimal 3 selections!"); return; }
-  const amount = parseInt(prompt("Enter amount for parlay:"));
+  document.getElementById("parlayModal").style.display="none";
+  document.getElementById("parlayAmountModal").style.display="block";
+  document.getElementById("parlayAmountInput").value="";
+}
+function confirmParlayAmount(){
+  const amount = parseInt(document.getElementById("parlayAmountInput").value);
   if(!amount || amount>wallet){ alert("Invalid amount"); return; }
-  let multiple = tempParlay.length*4;
+  const multiple = tempParlay.length*4;
   wallet -= amount;
   runningBets.push({type:"PARLAY", selections:tempParlay, amount, multiple, startTime:Date.now(), duration:120000});
   tempParlay=[];
+  document.getElementById("parlayAmountModal").style.display="none";
   document.getElementById("rlo").innerText = wallet;
-  document.getElementById("parlayModal").style.display="none";
   saveData();
+  updateParlayList();
 }
+function cancelParlayAmount(){
+  document.getElementById("parlayAmountModal").style.display="none";
+  document.getElementById("parlayModal").style.display="block";
+}
+
 function cancelParlay(){
   tempParlay=[];
   document.getElementById("parlayModal").style.display="none";
@@ -238,7 +264,7 @@ function cancelParlay(){
 }
 
 // =======================
-// UPDATE BETS
+// UPDATE BETS & SETTLE
 // =======================
 function updateBets(){
   const runningDiv = document.getElementById("running");
@@ -247,10 +273,8 @@ function updateBets(){
     const bet = runningBets[i];
     const remaining = bet.duration - (Date.now()-bet.startTime);
     if(remaining<=0){ settleBet(i); continue; }
-
     const m=Math.floor(remaining/60000);
     const s=Math.floor((remaining%60000)/1000);
-
     const div=document.createElement("div");
     if(bet.type==="SINGLE"){
       div.innerHTML = `${bet.side==="UP"?'<span class="up-text">UP</span>':'<span class="down-text">DOWN</span>'} ${bet.market} | ${bet.amount} | Entry: ${bet.entryPrice.toFixed(2)} | ${m}:${String(s).padStart(2,'0')}`;
@@ -262,10 +286,6 @@ function updateBets(){
   }
   renderCompleted();
 }
-
-// =======================
-// SETTLE BETS
-// =======================
 function settleBet(index){
   const bet = runningBets[index];
   let win=false;
@@ -319,6 +339,7 @@ function deleteAllCompleted(){ completedBets=[]; saveData(); renderCompleted(); 
 window.onclick = function(e){
   if(e.target.id==="betModal") document.getElementById("betModal").style.display="none";
   if(e.target.id==="parlayModal") document.getElementById("parlayModal").style.display="none";
+  if(e.target.id==="parlayAmountModal") document.getElementById("parlayAmountModal").style.display="none";
   if(e.target.id==="confirmModal") document.getElementById("confirmModal").style.display="none";
 };
 
