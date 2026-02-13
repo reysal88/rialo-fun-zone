@@ -31,6 +31,34 @@ input[type="number"] { color:white; background:#333; border:1px solid #555; padd
 
 /* Center list items in parlay modal */
 #parlayMarkets div, #parlayList div { margin:5px 0; text-align:center; }
+  #parlayMarkets div {
+  display: flex;
+  justify-content: center; /* tombol UP/DOWN di tengah */
+  align-items: center;
+  margin: 5px 0;
+  gap: 10px;
+}
+#parlayList div {
+  display: flex;
+  justify-content: space-between; /* teks kiri, tombol Remove kanan */
+  align-items: center;
+  margin: 5px 0;
+  padding: 3px 8px;
+  background: #111;
+  border-radius: 5px;
+  font-size: 14px;
+}
+#parlayList div button {
+  background:#f00;
+  color:#fff;
+  border:none;
+  padding:2px 6px;
+  border-radius:3px;
+  cursor:pointer;
+}
+#parlayList div span.up-text { color:#0f0; font-weight:bold; }
+#parlayList div span.down-text { color:#f00; font-weight:bold; }
+
 </style>
 </head>
 <body>
