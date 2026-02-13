@@ -9,25 +9,21 @@ body { margin:0; font-family:Arial; background:#000; color:#fff;}
 header { padding:15px; font-size:1.5em;}
 #wallet { position:fixed; top:15px; right:20px; font-weight:bold;}
 .market-container { display:flex; flex-wrap:wrap; justify-content:center; margin:70px 10px; gap:15px;}
-.market-box { background:#1a1a1a; padding:15px; border-radius:8px; width:240px; text-align:center;}
-.bet-row { display:flex; justify-content:center; gap:10px; margin-top:10px; flex-wrap:wrap;}
-.bet-row button { padding:8px 12px; cursor:pointer; font-weight:bold; border:none; border-radius:5px;}
+.market-box { background:#1a1a1a; padding:15px; border-radius:8px; width:200px; text-align:center;}
+.bet-row { display:flex; justify-content:center; gap:8px; margin-top:8px; flex-wrap:wrap;}
+.bet-row button { padding:5px 10px; font-size:14px; cursor:pointer;}
 #history { background:#111; margin:20px; padding:15px; border-radius:8px;}
-input[type="number"] { color:white; background:#333; border:1px solid #555; padding:5px;}
+input[type="number"] { color:white; background:#333; border:1px solid #555; padding:5px; width:80px; text-align:center;}
 
 /* Modal styles */
 .modal { display:none; position:fixed; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.8);}
 .modal-content { background:#222; margin:10% auto; padding:20px; width:320px; border-radius:8px; text-align:center;}
-.modal-content button { padding:6px 14px; margin:5px; cursor:pointer; font-weight:bold; border:none; border-radius:5px;}
+.modal-content button { padding:5px 12px; margin:5px; cursor:pointer;}
 
-/* Colors for buttons */
-.up-btn { background:#0f0; color:#000; }
-.down-btn { background:#f00; color:#fff; }
-.add-parlay-btn { background:#555; color:#fff; }
+/* UP / DOWN colors in history */
+.up { color:#0f0; font-weight:bold; }
+.down { color:#f00; font-weight:bold; }
 
-/* History text colors */
-.up-text { color:#0f0; font-weight:bold; }
-.down-text { color:#f00; font-weight:bold; }
 </style>
 </head>
 <body>
@@ -65,13 +61,20 @@ input[type="number"] { color:white; background:#333; border:1px solid #555; padd
 <!-- Modal Parlay Bet -->
 <div id="parlayModal" class="modal">
   <div class="modal-content">
-    <h3>Add Parlay Selection</h3>
-    <div id="parlayMarkets"></div>
-    <h4>Selected:</h4>
-    <div id="parlayList" style="text-align:center;"></div>
+    <h3 style="margin-bottom:15px;">Add Parlay Selection</h3>
+    
+    <!-- Daftar Market -->
+    <div id="parlayMarkets" style="display:flex; flex-direction:column; gap:10px; align-items:center; margin-bottom:15px;"></div>
+    
+    <h4 style="margin-bottom:10px;">Selected:</h4>
+    <div id="parlayList" style="margin-bottom:15px;"></div>
+    
     <p>Total X: <span id="parlayMultiple">0</span></p>
-    <button onclick="confirmParlay()">Confirm Parlay</button>
-    <button onclick="cancelParlay()">Cancel Parlay</button>
+    
+    <div style="margin-top:15px;">
+      <button onclick="confirmParlay()" style="margin:5px;">Confirm Parlay</button>
+      <button onclick="cancelParlay()" style="margin:5px;">Cancel Parlay</button>
+    </div>
   </div>
 </div>
 
@@ -130,11 +133,11 @@ function renderMarkets(){
     box.innerHTML=`
       <h3>${m} ${price ? price.toFixed(2) : "Loading..."} USD</h3>
       <div class="bet-row">
-        <button class="up-btn" onclick="openBet('${m}','UP')">UP</button>
-        <button class="down-btn" onclick="openBet('${m}','DOWN')">DOWN</button>
-        <button class="add-parlay-btn" onclick="openParlaySelection()">ADD PARLAY</button>
+        <button onclick="openBet('${m}','UP')">UP</button>
+        <button onclick="openBet('${m}','DOWN')">DOWN</button>
+        <button onclick="openParlaySelection()">Add Parlay</button>
       </div>
-      <div style="margin-top:5px; font-size:12px;">in 2 minute</div>
+      <div style="margin-top:5px; font-size:12px; color:#aaa;">in 2 minute</div>
     `;
     container.appendChild(box);
   });
@@ -164,7 +167,7 @@ async function fetchPrices(){
 function openBet(market,side){
   currentMarket=market;
   currentSide=side;
-  document.getElementById("betTitle").innerHTML= (side==="UP"?'<span class="up-text">UP</span>':'<span class="down-text">DOWN</span>')+" "+market;
+  document.getElementById("betTitle").innerText= side+" "+market;
   document.getElementById("betModal").style.display="block";
 }
 function confirmBet(){
@@ -188,12 +191,10 @@ function openParlaySelection(){
   container.innerHTML="";
   markets.forEach(m=>{
     const div=document.createElement("div");
-    div.style.marginBottom="5px";
-    div.style.textAlign="center";
     div.innerHTML=`
       ${m}: 
-      <button class="up-btn" onclick="selectParlay('${m}','UP')">UP</button>
-      <button class="down-btn" onclick="selectParlay('${m}','DOWN')">DOWN</button>
+      <button onclick="selectParlay('${m}','UP')">UP</button>
+      <button onclick="selectParlay('${m}','DOWN')">DOWN</button>
     `;
     container.appendChild(div);
   });
@@ -210,7 +211,8 @@ function updateParlayList(){
   div.innerHTML="";
   tempParlay.forEach((s,i)=>{
     const selDiv = document.createElement("div");
-    selDiv.innerHTML = `${s.side==="UP"?'<span class="up-text">UP</span>':'<span class="down-text">DOWN</span>'} ${s.market} ${s.price.toFixed(2)}$ <button onclick="removeParlay(${i})">Remove</button>`;
+    selDiv.style.textAlign="center";
+    selDiv.innerHTML = `${s.side} ${s.market} ${s.price.toFixed(2)}$ <button onclick="removeParlay(${i})">Remove</button>`;
     div.appendChild(selDiv);
   });
   document.getElementById("parlayMultiple").innerText = tempParlay.length*4;
@@ -248,14 +250,14 @@ function updateBets(){
     const remaining = bet.duration - (Date.now()-bet.startTime);
     if(remaining<=0){ settleBet(i); continue; }
 
-    const m=Math.floor(remaining/60000);
-    const s=Math.floor((remaining%60000)/1000);
+    const m=Math.floor(remaining/60e3);
+    const s=Math.floor((remaining%60e3)/1000);
 
     const div=document.createElement("div");
     if(bet.type==="SINGLE"){
-      div.innerHTML = `${bet.side==="UP"?'<span class="up-text">UP</span>':'<span class="down-text">DOWN</span>'} ${bet.market} | ${bet.amount} | Entry: ${bet.entryPrice.toFixed(2)} | ${m}:${String(s).padStart(2,'0')}`;
+      div.innerHTML = `<span class="${bet.side.toLowerCase()}">${bet.side}</span> ${bet.market} | ${bet.amount} | Entry: ${bet.entryPrice.toFixed(2)} | ${m}:${String(s).padStart(2,'0')}`;
     } else if(bet.type==="PARLAY"){
-      let selText = bet.selections.map(s=>`${s.side==="UP"?'<span class="up-text">UP</span>':'<span class="down-text">DOWN</span>'} ${s.market} ${s.price.toFixed(2)}`).join("<br>");
+      let selText = bet.selections.map(s=>`${s.side} ${s.market} ${s.price.toFixed(2)}`).join("<br>");
       div.innerHTML = `PARLAY BET | ${bet.amount} RLO<br>${selText}<br>TOTAL X${bet.multiple} | ${m}:${String(s).padStart(2,'0')}`;
     }
     runningDiv.appendChild(div);
@@ -297,9 +299,9 @@ function renderCompleted(){
   completedBets.forEach(bet=>{
     const div=document.createElement("div");
     if(bet.type==="SINGLE"){
-      div.innerHTML = `${bet.side==="UP"?'<span class="up-text">UP</span>':'<span class="down-text">DOWN</span>'} ${bet.market}<br>Amount: ${bet.amount}<br>Entry: ${bet.entryPrice.toFixed(2)}<br>Result: ${bet.result}<hr>`;
+      div.innerHTML = `<span class="${bet.side.toLowerCase()}">${bet.side}</span> ${bet.market}<br>Amount: ${bet.amount}<br>Entry: ${bet.entryPrice.toFixed(2)}<br>Result: ${bet.result}<hr>`;
     } else if(bet.type==="PARLAY"){
-      const selText = bet.selections.map(s=>`${s.side==="UP"?'<span class="up-text">UP</span>':'<span class="down-text">DOWN</span>'} ${s.market} ${s.price.toFixed(2)}`).join("<br>");
+      const selText = bet.selections.map(s=>`${s.side} ${s.market} ${s.price.toFixed(2)}`).join("<br>");
       div.innerHTML = `PARLAY BET<br>Amount: ${bet.amount}<br>${selText}<br>TOTAL X${bet.multiple}<br>Status: ${bet.result}<hr>`;
     }
     completedDiv.appendChild(div);
