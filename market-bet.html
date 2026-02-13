@@ -176,23 +176,25 @@ function renderMarkets(){
 }
 
 // =======================
-// BINANCE API
+// COINGECKO API
 // =======================
 async function fetchPrices(){
   try{
-    const res=await fetch("https://api.binance.com/api/v3/ticker/price");
-    const data=await res.json();
+    // CoinGecko simple price endpoint
+    const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,binancecoin,avalanche-2&vs_currencies=usd");
+    const data = await res.json();
 
-    data.forEach(item=>{
-      if(item.symbol==="BTCUSDT") marketData.BTC=parseFloat(item.price);
-      if(item.symbol==="ETHUSDT") marketData.ETH=parseFloat(item.price);
-      if(item.symbol==="SOLUSDT") marketData.SOL=parseFloat(item.price);
-      if(item.symbol==="BNBUSDT") marketData.BNB=parseFloat(item.price);
-      if(item.symbol==="AVAXUSDT") marketData.AVAX=parseFloat(item.price);
-    });
+    // Map data ke marketData
+    marketData.BTC = data.bitcoin.usd;
+    marketData.ETH = data.ethereum.usd;
+    marketData.SOL = data.solana.usd;
+    marketData.BNB = data.binancecoin.usd;
+    marketData.AVAX = data["avalanche-2"].usd;
 
     renderMarkets();
-  }catch(e){console.log(e);}
+  } catch(e){
+    console.log(e);
+  }
 }
 
 // =======================
