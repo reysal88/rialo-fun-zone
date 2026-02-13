@@ -176,27 +176,30 @@ function renderMarkets(){
 }
 
 // =======================
-// COINGECKO API
+// COINPAPRIKA API
 // =======================
 async function fetchPrices(){
-  try{
-    // CoinGecko simple price endpoint
-    const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,binancecoin,avalanche-2&vs_currencies=usd");
+  try {
+    const res = await fetch("https://api.coinpaprika.com/v1/tickers");
     const data = await res.json();
 
-    // Map data ke marketData
-    marketData.BTC = data.bitcoin.usd;
-    marketData.ETH = data.ethereum.usd;
-    marketData.SOL = data.solana.usd;
-    marketData.BNB = data.binancecoin.usd;
-    marketData.AVAX = data["avalanche-2"].usd;
+    const btc = data.find(c => c.symbol === "BTC");
+    const eth = data.find(c => c.symbol === "ETH");
+    const sol = data.find(c => c.symbol === "SOL");
+    const bnb = data.find(c => c.symbol === "BNB");
+    const avax = data.find(c => c.symbol === "AVAX");
+
+    if(btc) marketData.BTC = btc.quotes.USD.price;
+    if(eth) marketData.ETH = eth.quotes.USD.price;
+    if(sol) marketData.SOL = sol.quotes.USD.price;
+    if(bnb) marketData.BNB = bnb.quotes.USD.price;
+    if(avax) marketData.AVAX = avax.quotes.USD.price;
 
     renderMarkets();
   } catch(e){
     console.log(e);
   }
 }
-
 // =======================
 // OPEN BET
 // =======================
@@ -333,7 +336,7 @@ window.onclick = function(e){
 };
 
 fetchPrices();
-setInterval(fetchPrices,2000);
+setInterval(fetchPrices,5000);
 setInterval(updateBets,1000);
 renderCompleted();
 </script>
