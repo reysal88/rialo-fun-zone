@@ -9,15 +9,25 @@ body { margin:0; font-family:Arial; background:#000; color:#fff;}
 header { padding:15px; font-size:1.5em;}
 #wallet { position:fixed; top:15px; right:20px; font-weight:bold;}
 .market-container { display:flex; flex-wrap:wrap; justify-content:center; margin:70px 10px; gap:15px;}
-.market-box { background:#1a1a1a; padding:10px; border-radius:8px; width:220px; text-align:center; display:flex; flex-direction:column; justify-content:center;}
-.bet-row { display:flex; justify-content:space-between; gap:5px; flex-wrap:wrap; margin-bottom:5px;}
-.bet-row button { flex:1 1 25%; padding:4px 0; font-size:12px; margin-bottom:3px; cursor:pointer;}
-.in-time { font-size:15px; color:#aaa; margin-top:7px; white-space:nowrap; }
+.market-box { background:#1a1a1a; padding:15px; border-radius:8px; width:240px; text-align:center;}
+.bet-row { display:flex; justify-content:center; gap:10px; margin-top:10px; flex-wrap:wrap;}
+.bet-row button { padding:8px 12px; cursor:pointer; font-weight:bold; border:none; border-radius:5px;}
 #history { background:#111; margin:20px; padding:15px; border-radius:8px;}
 input[type="number"] { color:white; background:#333; border:1px solid #555; padding:5px;}
+
+/* Modal styles */
 .modal { display:none; position:fixed; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.8);}
-.modal-content { background:#222; margin:15% auto; padding:20px; width:300px; border-radius:8px; text-align:center;}
-.modal-content button { padding:5px 12px; margin:5px; cursor:pointer;}
+.modal-content { background:#222; margin:10% auto; padding:20px; width:320px; border-radius:8px; text-align:center;}
+.modal-content button { padding:6px 14px; margin:5px; cursor:pointer; font-weight:bold; border:none; border-radius:5px;}
+
+/* Colors for buttons */
+.up-btn { background:#0f0; color:#000; }
+.down-btn { background:#f00; color:#fff; }
+.add-parlay-btn { background:#555; color:#fff; }
+
+/* History text colors */
+.up-text { color:#0f0; font-weight:bold; }
+.down-text { color:#f00; font-weight:bold; }
 </style>
 </head>
 <body>
@@ -58,9 +68,9 @@ input[type="number"] { color:white; background:#333; border:1px solid #555; padd
     <h3>Add Parlay Selection</h3>
     <div id="parlayMarkets"></div>
     <h4>Selected:</h4>
-    <div id="parlayList"></div>
+    <div id="parlayList" style="text-align:center;"></div>
     <p>Total X: <span id="parlayMultiple">0</span></p>
-    <button onclick="confirmParlayAmount()">Confirm Parlay</button>
+    <button onclick="confirmParlay()">Confirm Parlay</button>
     <button onclick="cancelParlay()">Cancel Parlay</button>
   </div>
 </div>
@@ -112,31 +122,31 @@ loadData();
 // =======================
 function renderMarkets(){
   const container = document.getElementById("markets");
-  container.innerHTML = "";
-  markets.forEach(m => {
+  container.innerHTML="";
+  markets.forEach(m=>{
     const price = marketData[m];
-    const box = document.createElement("div");
-    box.className = "market-box";
-    box.innerHTML = `
-      <h3 style="margin:0 0 8px 0;">${m} ${price ? price.toFixed(2) : "Loading..."} USD</h3>
+    const box=document.createElement("div");
+    box.className="market-box";
+    box.innerHTML=`
+      <h3>${m} ${price ? price.toFixed(2) : "Loading..."} USD</h3>
       <div class="bet-row">
-        <button onclick="openBet('${m}','UP')">UP</button>
-        <button onclick="openBet('${m}','DOWN')">DOWN</button>
-        <button onclick="openParlaySelection()">Add Parlay</button>
+        <button class="up-btn" onclick="openBet('${m}','UP')">UP</button>
+        <button class="down-btn" onclick="openBet('${m}','DOWN')">DOWN</button>
+        <button class="add-parlay-btn" onclick="openParlaySelection()">ADD PARLAY</button>
       </div>
-      <div class="in-time">in 2 minute</div>
+      <div style="margin-top:5px; font-size:12px;">in 2 minute</div>
     `;
     container.appendChild(box);
   });
 }
 
 // =======================
-// FETCH PRICES
+// FETCH BINANCE PRICES
 // =======================
 async function fetchPrices(){
   try{
-    const res = await fetch("https://api.binance.com/api/v3/ticker/price");
-    const data = await res.json();
+    const res=await fetch("https://api.binance.com/api/v3/ticker/price");
+    const data=await res.json();
     data.forEach(item=>{
       if(item.symbol==="BTCUSDT") marketData.BTC=parseFloat(item.price);
       if(item.symbol==="ETHUSDT") marketData.ETH=parseFloat(item.price);
@@ -145,21 +155,21 @@ async function fetchPrices(){
       if(item.symbol==="AVAXUSDT") marketData.AVAX=parseFloat(item.price);
     });
     renderMarkets();
-  }catch(e){ console.log(e); }
+  }catch(e){console.log(e);}
 }
 
 // =======================
-// SINGLE BET
+// SINGLE BET FUNCTIONS
 // =======================
 function openBet(market,side){
-  currentMarket = market;
-  currentSide = side;
-  document.getElementById("betTitle").innerText = side+" "+market;
-  document.getElementById("betModal").style.display = "block";
+  currentMarket=market;
+  currentSide=side;
+  document.getElementById("betTitle").innerHTML= (side==="UP"?'<span class="up-text">UP</span>':'<span class="down-text">DOWN</span>')+" "+market;
+  document.getElementById("betModal").style.display="block";
 }
 function confirmBet(){
-  const amt = parseInt(document.getElementById("betAmount").value);
-  if(!amt || amt<=0 || amt>wallet){ alert("Invalid amount"); return; }
+  const amt=parseInt(document.getElementById("betAmount").value);
+  if(!amt||amt<=0||amt>wallet){ alert("Invalid amount"); return; }
   const entryPrice = marketData[currentMarket];
   wallet -= amt;
   document.getElementById("rlo").innerText = wallet;
@@ -170,15 +180,21 @@ function confirmBet(){
 }
 
 // =======================
-// PARLAY BET
+// PARLAY FUNCTIONS
 // =======================
 function openParlaySelection(){
-  document.getElementById("parlayModal").style.display = "block";
+  document.getElementById("parlayModal").style.display="block";
   const container = document.getElementById("parlayMarkets");
-  container.innerHTML = "";
+  container.innerHTML="";
   markets.forEach(m=>{
-    const div = document.createElement("div");
-    div.innerHTML = `${m}: <button onclick="selectParlay('${m}','UP')">UP</button> <button onclick="selectParlay('${m}','DOWN')">DOWN</button>`;
+    const div=document.createElement("div");
+    div.style.marginBottom="5px";
+    div.style.textAlign="center";
+    div.innerHTML=`
+      ${m}: 
+      <button class="up-btn" onclick="selectParlay('${m}','UP')">UP</button>
+      <button class="down-btn" onclick="selectParlay('${m}','DOWN')">DOWN</button>
+    `;
     container.appendChild(div);
   });
   updateParlayList();
@@ -191,10 +207,10 @@ function selectParlay(market,side){
 }
 function updateParlayList(){
   const div = document.getElementById("parlayList");
-  div.innerHTML = "";
+  div.innerHTML="";
   tempParlay.forEach((s,i)=>{
     const selDiv = document.createElement("div");
-    selDiv.innerHTML = `${s.side} ${s.market} ${s.price.toFixed(2)}$ <button onclick="removeParlay(${i})">Remove</button>`;
+    selDiv.innerHTML = `${s.side==="UP"?'<span class="up-text">UP</span>':'<span class="down-text">DOWN</span>'} ${s.market} ${s.price.toFixed(2)}$ <button onclick="removeParlay(${i})">Remove</button>`;
     div.appendChild(selDiv);
   });
   document.getElementById("parlayMultiple").innerText = tempParlay.length*4;
@@ -203,47 +219,53 @@ function removeParlay(index){
   tempParlay.splice(index,1);
   updateParlayList();
 }
-
-// =======================
-// CONFIRM PARLAY AMOUNT
-// =======================
-function confirmParlayAmount(){
+function confirmParlay(){
   if(tempParlay.length<3){ alert("Minimal 3 selections!"); return; }
   const amount = parseInt(prompt("Enter amount for parlay:"));
   if(!amount || amount>wallet){ alert("Invalid amount"); return; }
-  const multiple = tempParlay.length*4;
+  let multiple = tempParlay.length*4;
   wallet -= amount;
   runningBets.push({type:"PARLAY", selections:tempParlay, amount, multiple, startTime:Date.now(), duration:120000});
-  tempParlay = [];
+  tempParlay=[];
   document.getElementById("rlo").innerText = wallet;
-  document.getElementById("parlayModal").style.display = "none";
+  document.getElementById("parlayModal").style.display="none";
   saveData();
 }
-function cancelParlay(){ tempParlay=[]; document.getElementById("parlayModal").style.display="none"; updateParlayList(); }
+function cancelParlay(){
+  tempParlay=[];
+  document.getElementById("parlayModal").style.display="none";
+  updateParlayList();
+}
 
 // =======================
-// UPDATE & RENDER BETS
+// UPDATE BETS
 // =======================
 function updateBets(){
   const runningDiv = document.getElementById("running");
   runningDiv.innerHTML="";
-  runningBets.forEach((bet,i)=>{
+  for(let i=runningBets.length-1;i>=0;i--){
+    const bet = runningBets[i];
     const remaining = bet.duration - (Date.now()-bet.startTime);
-    if(remaining<=0){ settleBet(i); return; }
-    const m = Math.floor(remaining/60000);
-    const s = Math.floor((remaining%60000)/1000);
-    const div = document.createElement("div");
+    if(remaining<=0){ settleBet(i); continue; }
+
+    const m=Math.floor(remaining/60000);
+    const s=Math.floor((remaining%60000)/1000);
+
+    const div=document.createElement("div");
     if(bet.type==="SINGLE"){
-      div.innerText = `${bet.side} ${bet.market} | ${bet.amount} | Entry: ${bet.entryPrice.toFixed(2)} | ${m}:${String(s).padStart(2,'0')}`;
+      div.innerHTML = `${bet.side==="UP"?'<span class="up-text">UP</span>':'<span class="down-text">DOWN</span>'} ${bet.market} | ${bet.amount} | Entry: ${bet.entryPrice.toFixed(2)} | ${m}:${String(s).padStart(2,'0')}`;
     } else if(bet.type==="PARLAY"){
-      const selText = bet.selections.map(s=>`${s.side} ${s.market} ${s.price.toFixed(2)}`).join("\n");
-      div.innerText = `PARLAY BET | ${bet.amount} RLO\n${selText}\nTOTAL X${bet.multiple} | ${m}:${String(s).padStart(2,'0')}`;
+      let selText = bet.selections.map(s=>`${s.side==="UP"?'<span class="up-text">UP</span>':'<span class="down-text">DOWN</span>'} ${s.market} ${s.price.toFixed(2)}`).join("<br>");
+      div.innerHTML = `PARLAY BET | ${bet.amount} RLO<br>${selText}<br>TOTAL X${bet.multiple} | ${m}:${String(s).padStart(2,'0')}`;
     }
     runningDiv.appendChild(div);
-  });
+  }
   renderCompleted();
 }
 
+// =======================
+// SETTLE BETS
+// =======================
 function settleBet(index){
   const bet = runningBets[index];
   let win=false;
@@ -266,27 +288,33 @@ function settleBet(index){
   renderCompleted();
 }
 
+// =======================
+// RENDER COMPLETED
+// =======================
 function renderCompleted(){
   const completedDiv = document.getElementById("completed");
   completedDiv.innerHTML="";
   completedBets.forEach(bet=>{
-    const div = document.createElement("div");
+    const div=document.createElement("div");
     if(bet.type==="SINGLE"){
-      div.innerHTML = `<b>${bet.side} ${bet.market}</b><br>Amount: ${bet.amount}<br>Entry: ${bet.entryPrice.toFixed(2)}<br>Result: ${bet.result}<hr>`;
+      div.innerHTML = `${bet.side==="UP"?'<span class="up-text">UP</span>':'<span class="down-text">DOWN</span>'} ${bet.market}<br>Amount: ${bet.amount}<br>Entry: ${bet.entryPrice.toFixed(2)}<br>Result: ${bet.result}<hr>`;
     } else if(bet.type==="PARLAY"){
-      const selText = bet.selections.map(s=>`${s.side} ${s.market} ${s.price.toFixed(2)}`).join("<br>");
-      div.innerHTML = `<b>PARLAY BET</b><br>Amount: ${bet.amount}<br>${selText}<br>TOTAL X${bet.multiple}<br>Status: ${bet.result}<hr>`;
+      const selText = bet.selections.map(s=>`${s.side==="UP"?'<span class="up-text">UP</span>':'<span class="down-text">DOWN</span>'} ${s.market} ${s.price.toFixed(2)}`).join("<br>");
+      div.innerHTML = `PARLAY BET<br>Amount: ${bet.amount}<br>${selText}<br>TOTAL X${bet.multiple}<br>Status: ${bet.result}<hr>`;
     }
     completedDiv.appendChild(div);
   });
 }
 
+// =======================
+// DELETE COMPLETED
+// =======================
 function clearCompleted(){ document.getElementById("confirmModal").style.display="block"; }
 function closeConfirmModal(){ document.getElementById("confirmModal").style.display="none"; }
 function deleteAllCompleted(){ completedBets=[]; saveData(); renderCompleted(); closeConfirmModal(); }
 
 // =======================
-// CLOSE MODAL ON OUTSIDE CLICK
+// CLOSE MODAL ON CLICK OUTSIDE
 // =======================
 window.onclick = function(e){
   if(e.target.id==="betModal") document.getElementById("betModal").style.display="none";
@@ -295,7 +323,7 @@ window.onclick = function(e){
 };
 
 // =======================
-// VPN MENU
+// VPN MENU OK BUTTON
 // =======================
 document.getElementById("vpnOkBtn").onclick = function(){
   document.getElementById("vpnMenu").style.display="none";
