@@ -307,9 +307,8 @@ function selectParlay(market,side){
 }
 function updateParlayList(){
   const div = document.getElementById("parlayList");
-  div.innerHTML = "";
-
-  tempParlay.forEach((s, i) => {
+  div.innerHTML="";
+  tempParlay.forEach((s,i)=>{
     const selDiv = document.createElement("div");
     selDiv.style.display = "flex";
     selDiv.style.justifyContent = "space-between";
@@ -321,19 +320,18 @@ function updateParlayList(){
     selDiv.style.fontSize = "14px";
 
     selDiv.innerHTML = `
-  <div style="display:flex; align-items:center; gap:6px;">
-    <span style="font-size:20px; display:flex; align-items:center;">${getEmoji(s.market)}</span>
-    <span style="display:flex; flex-direction:column; justify-content:center; line-height:1.2;">
-      <span>${s.side==="UP"?'<span class="up-text">UP</span>':'<span class="down-text">DOWN</span>'}</span>
-      <span>${s.market} ${s.price.toFixed(2)}$</span>
-    </span>
-  </div>
-  <button onclick="removeParlay(${i})">Remove</button>
-`;
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span style="font-size:20px; display:flex; align-items:center;">${getEmoji(s.market)}</span>
+        <span style="display:flex; flex-direction:column; justify-content:center; line-height:1.2;">
+          <span>${s.side==="UP"?'<span class="up-text">UP</span>':'<span class="down-text">DOWN</span>'}</span>
+          <span style="${s.market==='AVAX' ? 'font-size:12px;' : ''}">${s.market} ${s.price.toFixed(2)}$</span>
+        </span>
+      </div>
+      <button onclick="removeParlay(${i})">Remove</button>
+    `;
     div.appendChild(selDiv);
   });
-
-  document.getElementById("parlayMultiple").innerText = tempParlay.length * 4;
+  document.getElementById("parlayMultiple").innerText = tempParlay.length*4;
 }
 function removeParlay(index){
   tempParlay.splice(index,1);
