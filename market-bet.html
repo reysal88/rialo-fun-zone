@@ -343,10 +343,10 @@ function updateBets(){
     const s=Math.floor((remaining%60000)/1000);
     const div=document.createElement("div");
     if(bet.type==="SINGLE"){
-      div.innerHTML = `${bet.side==="UP"?'<span class="up-text">UP</span>':'<span class="down-text">DOWN</span>'} ${bet.market} | ${bet.amount} RLO | Entry: ${bet.entryPrice.toFixed(2)} | ${m}:${String(s).padStart(2,'0')}`;
+      div.innerHTML = `${bet.side==="UP"?'<span class="up-text">UP</span>':'<span class="down-text">DOWN</span>'} ${bet.market} | ${bet.amount} RLO | Entry: ${bet.entryPrice.toFixed(2)} | ${m}:${String(s).padStart(2,'0')}<hr>`;
     } else if(bet.type==="PARLAY"){
       let selText = bet.selections.map(s=>`${s.side==="UP"?'<span class="up-text">UP</span>':'<span class="down-text">DOWN</span>'} ${s.market} ${s.price.toFixed(2)}`).join("<br>");
-      div.innerHTML = `PARLAY BET | ${bet.amount} RLO<br>${selText}<br>TOTAL X${bet.multiple} | ${m}:${String(s).padStart(2,'0')}`;
+      div.innerHTML = `PARLAY BET | ${bet.amount} RLO<br>${selText}<br>TOTAL X${bet.multiple} | ${m}:${String(s).padStart(2,'0')}<hr>`;
     }
     runningDiv.appendChild(div);
   }
