@@ -188,7 +188,16 @@ function loadData(){
   renderCompleted();
 }
 loadData();
-
+function getEmoji(market){
+  const icons = {
+    BTC: "🟠",
+    ETH: "🟣",
+    SOL: "🟢",
+    BNB: "🟡",
+    AVAX: "🔺"
+  };
+  return icons[market] || "⚪";
+}
 // =======================
 // RENDER MARKETS
 // =======================
@@ -200,7 +209,7 @@ function renderMarkets(){
     const box=document.createElement("div");
     box.className="market-box";
     box.innerHTML=`
-      <h3>${m} ${price ? price.toFixed(2) : "Loading..."} USD</h3>
+      <h3>${getEmoji(m)} ${m} ${price != null ? price.toFixed(2) : "Loading..."} USD</h3>
       <div class="bet-row">
         <button class="up-btn" onclick="openBet('${m}','UP')">UP</button>
         <button class="down-btn" onclick="openBet('${m}','DOWN')">DOWN</button>
@@ -261,7 +270,7 @@ function openParlaySelection(){
   markets.forEach(m=>{
     const div=document.createElement("div");
     div.innerHTML=`
-  <span class="market-label">${m} :</span>
+  <span class="market-label">${getEmoji(m)} ${m} :</span>
   <button class="up-btn" onclick="selectParlay('${m}','UP')">UP</button>
   <button class="down-btn" onclick="selectParlay('${m}','DOWN')">DOWN</button>
 `;
