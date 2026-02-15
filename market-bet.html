@@ -105,33 +105,38 @@ input[type="number"] { color:white; background:#333; border:1px solid #555; padd
 .market-logo {
   height: 32px;
 }
+/* ===== FIX PARLAY LOGO SEJALAN ===== */
 #parlayMarkets div {
   display: flex;
-  align-items: center;    /* sejajar vertikal */
+  align-items: center;    /* logo & nama sejajar vertikal */
   justify-content: flex-start;
-  width: 250px;
-  gap: 5px;
+  gap: 10px;              /* jarak antar elemen */
+  margin: 5px 0;
 }
 
 #parlayMarkets div .market-logo {
-  display: inline-block;
-  width: 20px;
-  text-align: center;
-  font-size: 18px;
+  font-size: 18px;        /* sesuaikan ukuran logo */
   line-height: 1;
-  vertical-align: middle; /* penting untuk emoji sejajar */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle; /* pastikan sejajar nama */
 }
 
 #parlayMarkets div .market-name {
-  flex: 1;
-  text-align: left;
+  font-size: 14px;
   line-height: 1.2;
-  vertical-align: middle;
+  vertical-align: middle; /* pastikan sejajar logo */
+  display: inline-block;
 }
 
-#parlayMarkets div .colon {
-  width: 10px;
-  text-align: left;
+#parlayMarkets div button {
+  margin-left: 10px;      /* jarak tombol ke logo/nama */
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
 }
 </style>
 </head>
