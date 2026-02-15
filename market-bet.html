@@ -310,23 +310,13 @@ function updateParlayList(){
   div.innerHTML="";
   tempParlay.forEach((s,i)=>{
     const selDiv = document.createElement("div");
-    selDiv.style.display = "flex";
-    selDiv.style.justifyContent = "space-between";
-    selDiv.style.alignItems = "center";
-    selDiv.style.margin = "5px 0";
-    selDiv.style.padding = "3px 8px";
-    selDiv.style.background = "#111";
-    selDiv.style.borderRadius = "5px";
-    selDiv.style.fontSize = "14px";
-
     selDiv.innerHTML = `
-      <div style="display:flex; align-items:center; gap:6px;">
-        <span style="font-size:20px;">${getEmoji(s.market)}</span>
-        ${s.side==="UP"?'<span class="up-text">UP</span>':'<span class="down-text">DOWN</span>'}
-        <span>${s.market} ${s.price.toFixed(2)}$</span>
-      </div>
-      <button onclick="removeParlay(${i})">Remove</button>
-    `;
+  <div class="left">
+    ${s.side==="UP"?'<span class="up-text">UP</span>':'<span class="down-text">DOWN</span>'}
+    <span>${s.market} ${s.price.toFixed(2)}$</span>
+  </div>
+  <button onclick="removeParlay(${i})">Remove</button>
+`;
     div.appendChild(selDiv);
   });
   document.getElementById("parlayMultiple").innerText = tempParlay.length*4;
