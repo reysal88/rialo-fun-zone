@@ -105,18 +105,18 @@ input[type="number"] { color:white; background:#333; border:1px solid #555; padd
 .market-logo {
   height: 32px;
 }
-/* Parlay selection: kiri logo+nama+colon, kanan tombol */
 #parlayMarkets div {
   display: flex;
-  justify-content: space-between; /* kiri-kanan */
-  align-items: center;            /* rata tengah vertikal */
+  align-items: center;            /* vertikal sejajar */
   margin: 5px 0;
 }
 
+/* kiri: logo + nama + colon */
 #parlayMarkets div .market-left {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
+  width: 100px;   /* fix lebar supaya semua colon rata */
 }
 
 #parlayMarkets div .market-logo {
@@ -132,7 +132,13 @@ input[type="number"] { color:white; background:#333; border:1px solid #555; padd
   font-size: 14px;
 }
 
-#parlayMarkets div button {
+/* kanan: tombol UP/DOWN */
+#parlayMarkets div .market-buttons {
+  display: flex;
+  gap: 5px;
+  margin-left: 10px;
+}
+#parlayMarkets div .market-buttons button {
   padding: 4px 10px;
   border-radius: 4px;
   border: none;
@@ -178,7 +184,6 @@ input[type="number"] { color:white; background:#333; border:1px solid #555; padd
   </div>
 </div>
 
-<!-- Modal Parlay Bet List -->
 <div id="parlayModal" class="modal">
   <div class="modal-content">
     <h3>Add Parlay Selection</h3>
@@ -321,22 +326,23 @@ function openParlaySelection(){
   document.getElementById("parlayModal").style.display="block";
   const container = document.getElementById("parlayMarkets");
   container.innerHTML="";
+
   markets.forEach(m=>{
-    const div=document.createElement("div");
+    const div = document.createElement("div");
     div.innerHTML = `
-<div class="market-left">
-  <span class="market-logo">${getEmoji(m)}</span>
-  <span class="market-name">${m}</span>
-  <span class="colon">:</span>
-</div>
-<div class="market-buttons">
-  <button class="up-btn" onclick="selectParlay('${m}','UP')">UP</button>
-  <button class="down-btn" onclick="selectParlay('${m}','DOWN')">DOWN</button>
-</div>
-`;
-  container.appendChild(div);  // 
-});
-  
+      <div class="market-left">
+        <span class="market-logo">${getEmoji(m)}</span>
+        <span class="market-name">${m}</span>
+        <span class="colon">:</span>
+      </div>
+      <div class="market-buttons">
+        <button class="up-btn" onclick="selectParlay('${m}','UP')">UP</button>
+        <button class="down-btn" onclick="selectParlay('${m}','DOWN')">DOWN</button>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+
   updateParlayList();
 }
 function selectParlay(market,side){
