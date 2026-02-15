@@ -108,8 +108,8 @@ input[type="number"] { color:white; background:#333; border:1px solid #555; padd
 /* Container parlay selection di tengah modal */
 #parlayMarkets {
   display: flex;
-  flex-direction: column; /* satu per satu baris */
-  align-items: center;    /* center seluruh container horizontal */
+  flex-direction: column;
+  align-items: center;
   gap: 8px;
   margin-bottom: 10px;
 }
@@ -117,20 +117,27 @@ input[type="number"] { color:white; background:#333; border:1px solid #555; padd
 /* Setiap baris market */
 #parlayMarkets div {
   display: flex;
-  justify-content: space-between; /* label kiri, tombol kanan */
+  justify-content: space-between;
   align-items: center;
-  width: 250px;    /* tetap sama lebar semua baris */
+  width: 250px;   /* tetap lebar sama */
 }
 
 /* Label market rata kiri */
-#parlayMarkets div span.market-label {
-  width: 80px;       /* lebar tetap untuk semua label */
-  text-align: left;  
+#parlayMarkets div .market-name {
+  display: inline-block;
+  width: 50px;       /* semua nama market punya lebar sama */
+  text-align: left;
+}
+
+/* Tanda ":" */
+#parlayMarkets div .colon {
+  width: 10px;
+  text-align: left;
 }
 
 /* Tombol UP/DOWN */
 #parlayMarkets div button {
-  width: 70px;      /* tombol sama besar */
+  width: 70px;
   padding: 5px;
   border: none;
   border-radius: 5px;
@@ -323,7 +330,8 @@ function openParlaySelection(){
   markets.forEach(m=>{
     const div=document.createElement("div");
     div.innerHTML=`
-  <span class="market-label">${getEmoji(m)} ${m} :</span>
+  <span class="market-name">${getEmoji(m)} ${m}</span>
+  <span class="colon">:</span>
   <button class="up-btn" onclick="selectParlay('${m}','UP')">UP</button>
   <button class="down-btn" onclick="selectParlay('${m}','DOWN')">DOWN</button>
 `;
