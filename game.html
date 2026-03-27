@@ -62,8 +62,6 @@ canvas { display:block; margin:0 auto; background:#000; touch-action:none; }
 
 <div id="menu">
 
-  <img src="images/title.png" id="gameTitle">
-
   <div class="game-container">
 
     <!-- GAME PESAWAT -->
@@ -266,17 +264,7 @@ function loop(){ update(); draw(); requestAnimationFrame(loop); }
 }
 
 // Play button -> splash grialo, then start game
-  menu.style.display='none';
-  grialoDiv.style.display='flex';
-  setTimeout(()=>{
-    grialoDiv.style.display='none';
-    canvas.style.display='block';
-    if(!gameLoopStarted){
-      gameLoopStarted=true;
-      loop();
-    }
-  },2000);
-});
+
 
 // Restart
 restartBtn.addEventListener('click', ()=>{
