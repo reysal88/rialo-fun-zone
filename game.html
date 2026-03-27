@@ -59,22 +59,27 @@ canvas { display:block; margin:0 auto; background:#000; touch-action:none; }
 </head>
 <body>
 
-<div class="game-container">
 
-  <!-- GAME PESAWAT -->
-  <div>
+<div id="menu">
+
+  <img src="images/title.png" id="gameTitle">
+
+  <div class="game-container">
+
+    <!-- GAME PESAWAT -->
     <div onclick="startGame()">
       <img src="images/title.png" class="thumb">
     </div>
-  </div>
 
-  <!-- GAME BALAP -->
-  <div>
-    <a href="rialo-town-race.html">
-      <img src="images/rialo-race-cover.png" class="thumb">
-    </a>
-  </div>
+    <!-- GAME BALAP -->
+    <div>
+      <a href="rialo-town-race.html">
+        <img src="images/rialo-race-cover.png" class="thumb">
+      </a>
+    </div>
 
+  </div>
+  
 </div>
 <div id="grialo">grialo</div>
 
@@ -86,7 +91,6 @@ canvas { display:block; margin:0 auto; background:#000; touch-action:none; }
 
 <script>
 const menu = document.getElementById('menu');
-const playBtn = document.getElementById('playBtn');
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const grialoDiv = document.getElementById('grialo');
@@ -247,9 +251,21 @@ function draw(){
 // Game loop start after Play click
 let gameLoopStarted = false;
 function loop(){ update(); draw(); requestAnimationFrame(loop); }
+  function startGame(){
+  menu.style.display='none';
+  grialoDiv.style.display='flex';
+
+  setTimeout(()=>{
+    grialoDiv.style.display='none';
+    canvas.style.display='block';
+    if(!gameLoopStarted){
+      gameLoopStarted=true;
+      loop();
+    }
+  },2000);
+}
 
 // Play button -> splash grialo, then start game
-playBtn.addEventListener('click', ()=>{
   menu.style.display='none';
   grialoDiv.style.display='flex';
   setTimeout(()=>{
@@ -279,18 +295,25 @@ backBtn.addEventListener('click', ()=>{
           
 // Keyboard control untuk PC
 document.addEventListener('keydown', e => {
-    if(gameOver) return; // jangan bisa gerak kalau game over
-    const step = 10; // jarak geser pesawat per tekan tombol
+    if(gameOver) return;
+
+    const step = 10;
+
     if(e.key === 'ArrowLeft') {
         ship.x -= step;
         if(ship.x < 0) ship.x = 0;
     }
+
     if(e.key === 'ArrowRight') {
         ship.x += step;
-        if(ship.x + ship.width > canvas.width) ship.x = canvas.width - ship.width;
+        if(ship.x + ship.width > canvas.width)
+            ship.x = canvas.width - ship.width;
     }
+
     if(e.key === ' ' || e.code === 'Space') {
         shootLaser();
+    }
+});
     function startGame(){
   menu.style.display='none';
   grialoDiv.style.display='flex';
