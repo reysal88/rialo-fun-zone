@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
-<title>Tokyo Drift Pro Neon</title>
+<title>Tokyo Drift Pro Fixed</title>
 
 <style>
-  body { margin:0; overflow:hidden; background:#000; touch-action:none; }
+  body { margin:0; overflow:hidden; background:#000; }
 
   #ui{
     position:absolute;
@@ -16,43 +16,13 @@
     font-family:Arial;
     font-size:13px;
     z-index:10;
-    opacity:0.85;
-  }
-
-  .btn{
-    position:absolute;
-    bottom:20px;
-    width:60px;
-    height:60px;
-    background:rgba(0,255,255,0.08);
-    border:1px solid rgba(0,255,255,0.3);
-    border-radius:12px;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    color:#00ffff;
-    font-size:20px;
-    user-select:none;
-  }
-
-  #left{ left:20px; }
-  #right{ left:90px; }
-  #gas{ right:20px; }
-  #brake{ right:90px; }
-
-  @media (min-width: 768px){
-    .btn{ display:none; }
+    opacity:0.8;
   }
 </style>
 </head>
 
 <body>
-<div id="ui">TOKYO DRIFT PRO NEON</div>
-
-<div id="left" class="btn">◀</div>
-<div id="right" class="btn">▶</div>
-<div id="gas" class="btn">▲</div>
-<div id="brake" class="btn">▼</div>
+<div id="ui">Tokyo Drift Pro - Fixed Camera</div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
@@ -62,142 +32,104 @@
 // SCENE
 // =====================
 const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0x050010, 30, 200);
+scene.fog = new THREE.Fog(0x050010, 30, 180);
 
-// CAMERA
 const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
-
-// RENDERER
 const renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth, innerHeight);
-renderer.setClearColor(0x050010);
 document.body.appendChild(renderer.domElement);
 
-// LIGHTS (NEON STYLE)
-scene.add(new THREE.AmbientLight(0x111122));
+// LIGHT
+scene.add(new THREE.AmbientLight(0x222233));
 
 const light = new THREE.DirectionalLight(0x00ffff, 1);
 light.position.set(10,20,10);
 scene.add(light);
 
 // =====================
-// ROAD
+// ROAD (CENTERED TRACK)
 // =====================
 const road = new THREE.Mesh(
-  new THREE.PlaneGeometry(30, 800),
+  new THREE.PlaneGeometry(18, 600),
   new THREE.MeshStandardMaterial({color:0x0a0a0a})
 );
 road.rotation.x = -Math.PI/2;
-road.position.z = -300;
+road.position.z = -250;
 scene.add(road);
 
-// neon road line
+// center line
 const line = new THREE.Mesh(
-  new THREE.PlaneGeometry(0.3, 800),
-  new THREE.MeshStandardMaterial({color:0x00ffff, emissive:0x00ffff, emissiveIntensity:0.8})
+  new THREE.PlaneGeometry(0.2, 600),
+  new THREE.MeshStandardMaterial({color:0x00ffff, emissive:0x00ffff})
 );
 line.rotation.x = -Math.PI/2;
 line.position.y = 0.01;
-line.position.z = -300;
+line.position.z = -250;
 scene.add(line);
 
 // =====================
-// NEON BUILDINGS
+// REALISTIC CITY GRID (FIXED)
 // =====================
-function neonBuilding(x,z){
-  const h = Math.random()*80 + 10;
-
-  const mat = new THREE.MeshStandardMaterial({
-    color:0x111111,
-    emissive: new THREE.Color(Math.random() > 0.5 ? 0x00ffff : 0xff00ff),
-    emissiveIntensity: 0.6
-  });
-
+function building(x,z,h,color){
   const b = new THREE.Mesh(
     new THREE.BoxGeometry(6,h,6),
-    mat
+    new THREE.MeshStandardMaterial({
+      color:0x111111,
+      emissive:color,
+      emissiveIntensity:0.4
+    })
   );
 
   b.position.set(x,h/2,z);
   scene.add(b);
 }
 
-for(let i=0;i<140;i++){
-  const z = -i*6;
-  const side = 22 + Math.random()*30;
+// structured skyline (not random chaos)
+for(let i=0;i<60;i++){
+  const z = -i*10;
 
-  neonBuilding(-side,z);
-  neonBuilding(side,z);
+  const h1 = 20 + (i%5)*8;
+  const h2 = 25 + ((i+2)%6)*10;
+
+  building(-14, z, h1, 0x00ffff);
+  building( 14, z, h2, 0xff00ff);
 }
 
 // =====================
-// CAR
+// CAR (CENTER OBJECT)
 // =====================
 const car = new THREE.Mesh(
   new THREE.BoxGeometry(1.6,0.8,3),
   new THREE.MeshStandardMaterial({
     color:0xff0033,
     emissive:0xff0033,
-    emissiveIntensity:0.4
+    emissiveIntensity:0.5
   })
 );
 
 car.position.set(0,1,0);
 scene.add(car);
 
-// camera start
-camera.position.set(0,6,12);
-
 // =====================
-// PARTICLES (LIGHT SPEED FEEL)
-// =====================
-const particlesGeo = new THREE.BufferGeometry();
-const count = 500;
-
-const pos = new Float32Array(count*3);
-
-for(let i=0;i<count;i++){
-  pos[i*3] = (Math.random()-0.5)*60;
-  pos[i*3+1] = Math.random()*20;
-  pos[i*3+2] = -Math.random()*200;
-}
-
-particlesGeo.setAttribute('position', new THREE.BufferAttribute(pos,3));
-
-const particles = new THREE.Points(
-  particlesGeo,
-  new THREE.PointsMaterial({color:0x00ffff, size:0.2})
-);
-
-scene.add(particles);
-
-// =====================
-// CONTROLS
+// CONTROL
 // =====================
 let steer = 0;
-let speed = 0.4;
+let speed = 0.45;
 
-// PC
 addEventListener("keydown",(e)=>{
-  if(e.key==="ArrowLeft") steer = 0.1;
-  if(e.key==="ArrowRight") steer = -0.1;
+  if(e.key==="ArrowLeft") steer = 0.08;
+  if(e.key==="ArrowRight") steer = -0.08;
   if(e.key==="ArrowUp") speed = 0.7;
-  if(e.key==="ArrowDown") speed = 0.15;
+  if(e.key==="ArrowDown") speed = 0.2;
 });
 
 addEventListener("keyup",()=>steer=0);
 
-// MOBILE
-const bind=(id,down,up)=>{
-  const el=document.getElementById(id);
-  el.ontouchstart=el.onmousedown=down;
-  el.ontouchend=el.onmouseup=up;
-};
-
-bind("left",()=>steer=0.1,()=>steer=0);
-bind("right",()=>steer=-0.1,()=>steer=0);
-bind("gas",()=>speed=0.7,()=>speed=0.4);
-bind("brake",()=>speed=0.1,()=>speed=0.4);
+// =====================
+// CAMERA FIX (IMPORTANT PART)
+// =====================
+// kamera selalu di belakang mobil (CENTERED GAME VIEW)
+const cameraOffset = new THREE.Vector3(0, 6, 12);
 
 // =====================
 // LOOP
@@ -205,20 +137,23 @@ bind("brake",()=>speed=0.1,()=>speed=0.4);
 function animate(){
   requestAnimationFrame(animate);
 
+  // movement
   car.rotation.y += steer;
 
   car.position.x -= Math.sin(car.rotation.y)*speed;
   car.position.z -= Math.cos(car.rotation.y)*speed;
 
-  // CAMERA (cinematic drift feel)
-  camera.position.x += (car.position.x + 7 - camera.position.x)*0.07;
-  camera.position.z += (car.position.z + 12 - camera.position.z)*0.07;
+  // =====================
+  // FIXED CAMERA FOLLOW
+  // =====================
+  const behindX = car.position.x + Math.sin(car.rotation.y) * cameraOffset.z;
+  const behindZ = car.position.z + Math.cos(car.rotation.y) * cameraOffset.z;
+
+  camera.position.x += (behindX - camera.position.x)*0.1;
+  camera.position.z += (behindZ - camera.position.z)*0.1;
   camera.position.y = 6;
 
-  camera.lookAt(car.position);
-
-  // particles move (speed illusion)
-  particles.rotation.z += 0.002;
+  camera.lookAt(car.position.x, car.position.y, car.position.z);
 
   renderer.render(scene,camera);
 }
