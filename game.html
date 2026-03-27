@@ -35,24 +35,17 @@ canvas { display:block; margin:0 auto; background:#000; touch-action:none; }
 }
 
 .thumb {
-  width:160px;
-  height:160px;
+  width:22vw;          /* ukuran ikut layar */
+  max-width:260px;     /* batas maksimal di laptop */
+  aspect-ratio:1/1;    /* biar tetap kotak */
   object-fit:cover;
-  border-radius:10px;
+  border-radius:12px;
   cursor:pointer;
   transition:0.3s;
 }
-
-@media (hover:hover) {
-  .thumb:hover {
-    transform:scale(1.08);
-  }
-}
-
 @media (max-width:600px) {
   .thumb {
-    width:130px;
-    height:130px;
+    width:35vw;       /* lebih besar di HP */
   }
 }
 </style>
