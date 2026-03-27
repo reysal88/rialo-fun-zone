@@ -7,7 +7,11 @@
 <style>
 body { margin:0; padding:0; background:#000; font-family:Arial; color:#fff; text-align:center; overflow:hidden; }
 #menu { position:absolute; width:100%; height:100%; display:flex; justify-content:center; align-items:center; flex-direction:column; }
-#menu img { width:80%; max-width:400px; height:auto; margin-bottom:10px; }
+#gameTitle { 
+  width:80%; 
+  max-width:400px; 
+  height:auto; 
+}
 #menu button { font-size:16px; padding:5px 10px; cursor:pointer; margin-top:10px; }
 canvas { display:block; margin:0 auto; background:#000; touch-action:none; }
 #grialo { position:absolute; width:100%; height:100%; display:flex; justify-content:center; align-items:center; font-size:40px; color:white; display:none;
@@ -20,6 +24,37 @@ canvas { display:block; margin:0 auto; background:#000; touch-action:none; }
 #gameOverText { position:absolute; width:100%; top:40%; text-align:center; font-size:36px; color:red; display:none; }
 #restartBtn, #backBtn { margin-top:0px; padding:10px 20px; font-size:16px; display:none; cursor:pointer; }
 #by { margin-top:10px; font-size:14px; }
+/* === TAMBAHAN RESPONSIVE MENU === */
+
+.game-container {
+  display:flex;
+  gap:20px;
+  justify-content:center;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+.thumb {
+  width:160px;
+  height:160px;
+  object-fit:cover;
+  border-radius:10px;
+  cursor:pointer;
+  transition:0.3s;
+}
+
+@media (hover:hover) {
+  .thumb:hover {
+    transform:scale(1.08);
+  }
+}
+
+@media (max-width:600px) {
+  .thumb {
+    width:130px;
+    height:130px;
+  }
+}
 </style>
 </head>
 <body>
@@ -37,7 +72,7 @@ canvas { display:block; margin:0 auto; background:#000; touch-action:none; }
     <!-- GAME BALAP -->
     <div>
       <a href="rialo-town-race.html">
-        <img src="images/rialo-race-cover.png" style="width:120px;">
+       <img src="images/rialo-race-cover.png" class="thumb">
       </a>
     </div>
 
