@@ -1,183 +1,165 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rialo Town Race</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Drift City Final</title>
 
 <style>
-body {
-  margin:0;
-  background:#111;
-  overflow:hidden;
-  text-align:center;
-  font-family:Arial;
-  color:white;
-}
-
-canvas {
-  display:block;
-  margin:0 auto;
-  background:#222;
-}
-
-#ui {
-  position:absolute;
-  top:10px;
-  width:100%;
-  text-align:center;
-  font-size:18px;
-}
-
-#gameOver {
-  position:absolute;
-  top:40%;
-  width:100%;
-  font-size:40px;
-  color:red;
-  display:none;
-}
-
-button {
-  margin-top:10px;
-  padding:10px 20px;
-  font-size:16px;
-}
+  body { margin:0; overflow:hidden; background:#000; }
+  #ui {
+    position:absolute;
+    top:10px;
+    left:10px;
+    color:white;
+    font-family:Arial;
+    font-size:14px;
+    z-index:10;
+    opacity:0.8;
+  }
 </style>
 </head>
 
 <body>
+<div id="ui">Drift City Final - Arrow Keys to Drive</div>
 
-<div id="ui">Score: 0</div>
-<div id="gameOver">GAME OVER<br><button onclick="restart()">Restart</button></div>
-
-<canvas id="gameCanvas" width="400" height="600"></canvas>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
 <script>
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-const ui = document.getElementById("ui");
-const gameOverText = document.getElementById("gameOver");
+// =====================
+// BASIC SETUP
+// =====================
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x000000, 10, 140);
 
-let score = 0;
-let gameOver = false;
+const camera = new THREE.PerspectiveCamera(
+  75,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  1000
+);
 
-// Player (mobil)
-const car = {
-  x: 180,
-  y: 500,
-  width: 40,
-  height: 80,
-  speed: 5
-};
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
 
-// Musuh
-const enemies = [];
-let enemySpeed = 3;
+// LIGHT
+const light = new THREE.DirectionalLight(0xffffff, 1);
+light.position.set(10,20,10);
+scene.add(light);
 
-// Jalan (garis)
-let roadLines = [];
-for(let i=0;i<10;i++){
-  roadLines.push({x:195, y:i*60});
+// AMBIENT
+scene.add(new THREE.AmbientLight(0x404040));
+
+// =====================
+// ROAD CURVE FUNCTION
+// =====================
+function roadX(z){
+  return Math.sin(z * 0.04) * 10;
 }
 
-// Spawn musuh
-function spawnEnemy(){
-  const xPositions = [120, 180, 240];
-  const x = xPositions[Math.floor(Math.random()*xPositions.length)];
-  enemies.push({x:x, y:-80, width:40, height:80});
-}
-setInterval(spawnEnemy, 1200);
+// =====================
+// ROAD BUILD
+// =====================
+const segments = 120;
+const segSize = 2;
 
-// Control keyboard
-document.addEventListener("keydown", e=>{
-  if(e.key === "ArrowLeft") car.x -= car.speed;
-  if(e.key === "ArrowRight") car.x += car.speed;
+for(let i=0;i<segments;i++){
+  const z = -i * segSize;
+
+  const road = new THREE.Mesh(
+    new THREE.PlaneGeometry(14, segSize+1),
+    new THREE.MeshStandardMaterial({ color:0x1a1a1a })
+  );
+
+  road.rotation.x = -Math.PI/2;
+  road.position.set(roadX(z), 0, z);
+
+  scene.add(road);
+}
+
+// =====================
+// BUILDINGS
+// =====================
+function addBuilding(x,z){
+  const h = Math.random()*20 + 4;
+
+  const b = new THREE.Mesh(
+    new THREE.BoxGeometry(3,h,3),
+    new THREE.MeshStandardMaterial({ color:0x2b2b2b })
+  );
+
+  b.position.set(x, h/2, z);
+  scene.add(b);
+}
+
+for(let i=0;i<200;i++){
+  const z = -i * 2;
+
+  const offset = 10 + Math.random()*12;
+
+  addBuilding(roadX(z)+offset, z);
+  addBuilding(roadX(z)-offset, z);
+}
+
+// =====================
+// CAR
+// =====================
+const car = new THREE.Mesh(
+  new THREE.BoxGeometry(1.5,0.8,3),
+  new THREE.MeshStandardMaterial({ color:0xff0000 })
+);
+
+car.position.y = 1;
+scene.add(car);
+
+camera.position.set(0,5,10);
+
+// =====================
+// CONTROLS
+// =====================
+let speed = 0.2;
+let steer = 0;
+
+document.addEventListener("keydown",(e)=>{
+  if(e.key==="ArrowLeft") steer = 0.08;
+  if(e.key==="ArrowRight") steer = -0.08;
+  if(e.key==="ArrowUp") speed = 0.3;
+  if(e.key==="ArrowDown") speed = 0.05;
 });
 
-// Touch control
-canvas.addEventListener("touchmove", e=>{
-  const rect = canvas.getBoundingClientRect();
-  const touchX = e.touches[0].clientX - rect.left;
-  car.x = touchX - car.width/2;
+document.addEventListener("keyup",()=>{
+  steer = 0;
 });
 
-// Update
-function update(){
-  if(gameOver) return;
+// =====================
+// LOOP
+// =====================
+function animate(){
+  requestAnimationFrame(animate);
 
-  score++;
-  ui.innerText = "Score: " + score;
+  car.rotation.y += steer;
 
-  // batas jalan
-  if(car.x < 100) car.x = 100;
-  if(car.x + car.width > 300) car.x = 300 - car.width;
+  car.position.x -= Math.sin(car.rotation.y) * speed;
+  car.position.z -= Math.cos(car.rotation.y) * speed;
 
-  // gerak garis jalan
-  roadLines.forEach(line=>{
-    line.y += 5;
-    if(line.y > canvas.height) line.y = -60;
-  });
+  camera.position.x = car.position.x + 6;
+  camera.position.z = car.position.z + 8;
+  camera.position.y = 5;
 
-  // musuh
-  enemies.forEach((e,i)=>{
-    e.y += enemySpeed;
+  camera.lookAt(car.position);
 
-    // tabrakan
-    if(car.x < e.x + e.width &&
-       car.x + car.width > e.x &&
-       car.y < e.y + e.height &&
-       car.y + car.height > e.y){
-         gameOver = true;
-         gameOverText.style.display = "block";
-    }
-
-    if(e.y > canvas.height){
-      enemies.splice(i,1);
-    }
-  });
+  renderer.render(scene,camera);
 }
 
-// Draw
-function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+animate();
 
-  // jalan
-  ctx.fillStyle="#333";
-  ctx.fillRect(100,0,200,600);
-
-  // garis jalan
-  ctx.fillStyle="white";
-  roadLines.forEach(line=>{
-    ctx.fillRect(line.x, line.y, 10, 40);
-  });
-
-  // mobil player
-  ctx.fillStyle="cyan";
-  ctx.fillRect(car.x, car.y, car.width, car.height);
-
-  // musuh
-  ctx.fillStyle="red";
-  enemies.forEach(e=>{
-    ctx.fillRect(e.x, e.y, e.width, e.height);
-  });
-}
-
-// Loop
-function loop(){
-  update();
-  draw();
-  requestAnimationFrame(loop);
-}
-loop();
-
-// Restart
-function restart(){
-  enemies.length = 0;
-  score = 0;
-  gameOver = false;
-  gameOverText.style.display = "none";
-}
+// resize
+window.addEventListener("resize",()=>{
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth,window.innerHeight);
+});
 </script>
 
 </body>
