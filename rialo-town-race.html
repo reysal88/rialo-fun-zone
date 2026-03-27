@@ -1,38 +1,49 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
-<title>Tokyo Drift Pro Fixed</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Tokyo Arcade Racing</title>
 
 <style>
-  body { margin:0; overflow:hidden; background:#000; }
+body { margin:0; overflow:hidden; background:#000; }
 
-  #ui{
-    position:absolute;
-    top:10px;
-    left:10px;
-    color:#00ffff;
-    font-family:Arial;
-    font-size:13px;
-    z-index:10;
-    opacity:0.8;
-  }
+#ui{
+  position:absolute;
+  top:10px;
+  left:10px;
+  color:#00ffff;
+  font-family:Arial;
+  font-size:14px;
+  z-index:10;
+}
+
+#finish{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  color:yellow;
+  font-size:40px;
+  font-family:Arial;
+  display:none;
+}
 </style>
 </head>
 
 <body>
-<div id="ui">Tokyo Drift Pro - Fixed Camera</div>
+<div id="ui">ARCADE RACING - Reach FINISH</div>
+<div id="finish">FINISH!</div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
 <script>
 
 // =====================
-// SCENE
+// BASIC SETUP
 // =====================
 const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0x050010, 30, 180);
+scene.fog = new THREE.Fog(0x000000, 20, 200);
 
 const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({antialias:true});
@@ -40,35 +51,44 @@ renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
 // LIGHT
-scene.add(new THREE.AmbientLight(0x222233));
-
-const light = new THREE.DirectionalLight(0x00ffff, 1);
+scene.add(new THREE.AmbientLight(0x333333));
+const light = new THREE.DirectionalLight(0xffffff, 1);
 light.position.set(10,20,10);
 scene.add(light);
 
 // =====================
-// ROAD (CENTERED TRACK)
+// TRACK (CURVE PATH - FIXED ROUTE)
 // =====================
-const road = new THREE.Mesh(
-  new THREE.PlaneGeometry(18, 600),
-  new THREE.MeshStandardMaterial({color:0x0a0a0a})
-);
-road.rotation.x = -Math.PI/2;
-road.position.z = -250;
-scene.add(road);
+const path = [];
+let z = 0;
+let x = 0;
 
-// center line
-const line = new THREE.Mesh(
-  new THREE.PlaneGeometry(0.2, 600),
-  new THREE.MeshStandardMaterial({color:0x00ffff, emissive:0x00ffff})
-);
-line.rotation.x = -Math.PI/2;
-line.position.y = 0.01;
-line.position.z = -250;
-scene.add(line);
+// bikin track belok (arc sederhana)
+for(let i=0;i<200;i++){
+  z -= 5;
+
+  if(i < 50) x += 0.1;
+  else if(i < 100) x -= 0.15;
+  else if(i < 150) x += 0.05;
+  else x -= 0.08;
+
+  path.push({x,z});
+}
+
+// road segments
+for(let i=0;i<path.length;i++){
+  const seg = new THREE.Mesh(
+    new THREE.PlaneGeometry(10,5),
+    new THREE.MeshStandardMaterial({color:0x111111})
+  );
+
+  seg.rotation.x = -Math.PI/2;
+  seg.position.set(path[i].x,0,path[i].z);
+  scene.add(seg);
+}
 
 // =====================
-// REALISTIC CITY GRID (FIXED)
+// CITY (BETTER STRUCTURE)
 // =====================
 function building(x,z,h,color){
   const b = new THREE.Mesh(
@@ -76,60 +96,58 @@ function building(x,z,h,color){
     new THREE.MeshStandardMaterial({
       color:0x111111,
       emissive:color,
-      emissiveIntensity:0.4
+      emissiveIntensity:0.3
     })
   );
-
   b.position.set(x,h/2,z);
   scene.add(b);
 }
 
-// structured skyline (not random chaos)
-for(let i=0;i<60;i++){
-  const z = -i*10;
+for(let i=0;i<path.length;i+=5){
+  const p = path[i];
 
-  const h1 = 20 + (i%5)*8;
-  const h2 = 25 + ((i+2)%6)*10;
-
-  building(-14, z, h1, 0x00ffff);
-  building( 14, z, h2, 0xff00ff);
+  building(p.x + 12, p.z, 20 + (i%4)*5, 0x00ffff);
+  building(p.x - 12, p.z, 25 + (i%6)*4, 0xff00ff);
 }
 
 // =====================
-// CAR (CENTER OBJECT)
+// CAR
 // =====================
 const car = new THREE.Mesh(
   new THREE.BoxGeometry(1.6,0.8,3),
   new THREE.MeshStandardMaterial({
-    color:0xff0033,
-    emissive:0xff0033,
-    emissiveIntensity:0.5
+    color:0xff0000,
+    emissive:0xff0000,
+    emissiveIntensity:0.4
   })
 );
 
-car.position.set(0,1,0);
 scene.add(car);
+car.position.set(path[0].x,1,path[0].z);
 
 // =====================
-// CONTROL
+// GAME STATE
 // =====================
+let index = 0;
+let speed = 0.6;
 let steer = 0;
-let speed = 0.45;
 
+let finished = false;
+
+// controls
 addEventListener("keydown",(e)=>{
-  if(e.key==="ArrowLeft") steer = 0.08;
-  if(e.key==="ArrowRight") steer = -0.08;
-  if(e.key==="ArrowUp") speed = 0.7;
+  if(e.key==="ArrowLeft") steer = 0.1;
+  if(e.key==="ArrowRight") steer = -0.1;
+  if(e.key==="ArrowUp") speed = 1;
   if(e.key==="ArrowDown") speed = 0.2;
 });
 
 addEventListener("keyup",()=>steer=0);
 
 // =====================
-// CAMERA FIX (IMPORTANT PART)
+// CAMERA (PS2 STYLE CHASE)
 // =====================
-// kamera selalu di belakang mobil (CENTERED GAME VIEW)
-const cameraOffset = new THREE.Vector3(0, 6, 12);
+const camOffset = new THREE.Vector3(0,6,12);
 
 // =====================
 // LOOP
@@ -137,30 +155,39 @@ const cameraOffset = new THREE.Vector3(0, 6, 12);
 function animate(){
   requestAnimationFrame(animate);
 
-  // movement
-  car.rotation.y += steer;
+  if(finished) return;
 
-  car.position.x -= Math.sin(car.rotation.y)*speed;
-  car.position.z -= Math.cos(car.rotation.y)*speed;
+  index += speed;
+  if(index >= path.length){
+    document.getElementById("finish").style.display="block";
+    finished = true;
+    return;
+  }
 
-  // =====================
-  // FIXED CAMERA FOLLOW
-  // =====================
-  const behindX = car.position.x + Math.sin(car.rotation.y) * cameraOffset.z;
-  const behindZ = car.position.z + Math.cos(car.rotation.y) * cameraOffset.z;
+  const target = path[Math.floor(index)];
+  const next = path[Math.floor(index)+1] || target;
 
-  camera.position.x += (behindX - camera.position.x)*0.1;
-  camera.position.z += (behindZ - camera.position.z)*0.1;
-  camera.position.y = 6;
+  // direction follow track
+  car.position.x = target.x;
+  car.position.z = target.z;
 
-  camera.lookAt(car.position.x, car.position.y, car.position.z);
+  const dx = next.x - target.x;
+  const dz = next.z - target.z;
+
+  car.rotation.y = Math.atan2(dx, dz);
+
+  // camera follow (SMOOTH)
+  camera.position.x += (car.position.x + camOffset.x - camera.position.x)*0.08;
+  camera.position.z += (car.position.z + camOffset.z - camera.position.z)*0.08;
+  camera.position.y = camOffset.y;
+
+  camera.lookAt(car.position);
 
   renderer.render(scene,camera);
 }
 
 animate();
 
-// resize
 addEventListener("resize",()=>{
   camera.aspect = innerWidth/innerHeight;
   camera.updateProjectionMatrix();
