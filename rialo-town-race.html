@@ -2,135 +2,202 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Drift City Final</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<title>Tokyo Drift Pro Neon</title>
 
 <style>
-  body { margin:0; overflow:hidden; background:#000; }
-  #ui {
+  body { margin:0; overflow:hidden; background:#000; touch-action:none; }
+
+  #ui{
     position:absolute;
     top:10px;
     left:10px;
-    color:white;
+    color:#00ffff;
     font-family:Arial;
-    font-size:14px;
+    font-size:13px;
     z-index:10;
-    opacity:0.8;
+    opacity:0.85;
+  }
+
+  .btn{
+    position:absolute;
+    bottom:20px;
+    width:60px;
+    height:60px;
+    background:rgba(0,255,255,0.08);
+    border:1px solid rgba(0,255,255,0.3);
+    border-radius:12px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    color:#00ffff;
+    font-size:20px;
+    user-select:none;
+  }
+
+  #left{ left:20px; }
+  #right{ left:90px; }
+  #gas{ right:20px; }
+  #brake{ right:90px; }
+
+  @media (min-width: 768px){
+    .btn{ display:none; }
   }
 </style>
 </head>
 
 <body>
-<div id="ui">Drift City Final - Arrow Keys to Drive</div>
+<div id="ui">TOKYO DRIFT PRO NEON</div>
+
+<div id="left" class="btn">◀</div>
+<div id="right" class="btn">▶</div>
+<div id="gas" class="btn">▲</div>
+<div id="brake" class="btn">▼</div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
 <script>
+
 // =====================
-// BASIC SETUP
+// SCENE
 // =====================
 const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0x000000, 10, 140);
+scene.fog = new THREE.Fog(0x050010, 30, 200);
 
-const camera = new THREE.PerspectiveCamera(
-  75,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  1000
-);
+// CAMERA
+const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
 
-const renderer = new THREE.WebGLRenderer({ antialias:true });
-renderer.setSize(window.innerWidth, window.innerHeight);
+// RENDERER
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth, innerHeight);
+renderer.setClearColor(0x050010);
 document.body.appendChild(renderer.domElement);
 
-// LIGHT
-const light = new THREE.DirectionalLight(0xffffff, 1);
+// LIGHTS (NEON STYLE)
+scene.add(new THREE.AmbientLight(0x111122));
+
+const light = new THREE.DirectionalLight(0x00ffff, 1);
 light.position.set(10,20,10);
 scene.add(light);
 
-// AMBIENT
-scene.add(new THREE.AmbientLight(0x404040));
+// =====================
+// ROAD
+// =====================
+const road = new THREE.Mesh(
+  new THREE.PlaneGeometry(30, 800),
+  new THREE.MeshStandardMaterial({color:0x0a0a0a})
+);
+road.rotation.x = -Math.PI/2;
+road.position.z = -300;
+scene.add(road);
+
+// neon road line
+const line = new THREE.Mesh(
+  new THREE.PlaneGeometry(0.3, 800),
+  new THREE.MeshStandardMaterial({color:0x00ffff, emissive:0x00ffff, emissiveIntensity:0.8})
+);
+line.rotation.x = -Math.PI/2;
+line.position.y = 0.01;
+line.position.z = -300;
+scene.add(line);
 
 // =====================
-// ROAD CURVE FUNCTION
+// NEON BUILDINGS
 // =====================
-function roadX(z){
-  return Math.sin(z * 0.04) * 10;
-}
+function neonBuilding(x,z){
+  const h = Math.random()*80 + 10;
 
-// =====================
-// ROAD BUILD
-// =====================
-const segments = 120;
-const segSize = 2;
-
-for(let i=0;i<segments;i++){
-  const z = -i * segSize;
-
-  const road = new THREE.Mesh(
-    new THREE.PlaneGeometry(14, segSize+1),
-    new THREE.MeshStandardMaterial({ color:0x1a1a1a })
-  );
-
-  road.rotation.x = -Math.PI/2;
-  road.position.set(roadX(z), 0, z);
-
-  scene.add(road);
-}
-
-// =====================
-// BUILDINGS
-// =====================
-function addBuilding(x,z){
-  const h = Math.random()*20 + 4;
+  const mat = new THREE.MeshStandardMaterial({
+    color:0x111111,
+    emissive: new THREE.Color(Math.random() > 0.5 ? 0x00ffff : 0xff00ff),
+    emissiveIntensity: 0.6
+  });
 
   const b = new THREE.Mesh(
-    new THREE.BoxGeometry(3,h,3),
-    new THREE.MeshStandardMaterial({ color:0x2b2b2b })
+    new THREE.BoxGeometry(6,h,6),
+    mat
   );
 
-  b.position.set(x, h/2, z);
+  b.position.set(x,h/2,z);
   scene.add(b);
 }
 
-for(let i=0;i<200;i++){
-  const z = -i * 2;
+for(let i=0;i<140;i++){
+  const z = -i*6;
+  const side = 22 + Math.random()*30;
 
-  const offset = 10 + Math.random()*12;
-
-  addBuilding(roadX(z)+offset, z);
-  addBuilding(roadX(z)-offset, z);
+  neonBuilding(-side,z);
+  neonBuilding(side,z);
 }
 
 // =====================
 // CAR
 // =====================
 const car = new THREE.Mesh(
-  new THREE.BoxGeometry(1.5,0.8,3),
-  new THREE.MeshStandardMaterial({ color:0xff0000 })
+  new THREE.BoxGeometry(1.6,0.8,3),
+  new THREE.MeshStandardMaterial({
+    color:0xff0033,
+    emissive:0xff0033,
+    emissiveIntensity:0.4
+  })
 );
 
-car.position.y = 1;
+car.position.set(0,1,0);
 scene.add(car);
 
-camera.position.set(0,5,10);
+// camera start
+camera.position.set(0,6,12);
+
+// =====================
+// PARTICLES (LIGHT SPEED FEEL)
+// =====================
+const particlesGeo = new THREE.BufferGeometry();
+const count = 500;
+
+const pos = new Float32Array(count*3);
+
+for(let i=0;i<count;i++){
+  pos[i*3] = (Math.random()-0.5)*60;
+  pos[i*3+1] = Math.random()*20;
+  pos[i*3+2] = -Math.random()*200;
+}
+
+particlesGeo.setAttribute('position', new THREE.BufferAttribute(pos,3));
+
+const particles = new THREE.Points(
+  particlesGeo,
+  new THREE.PointsMaterial({color:0x00ffff, size:0.2})
+);
+
+scene.add(particles);
 
 // =====================
 // CONTROLS
 // =====================
-let speed = 0.2;
 let steer = 0;
+let speed = 0.4;
 
-document.addEventListener("keydown",(e)=>{
-  if(e.key==="ArrowLeft") steer = 0.08;
-  if(e.key==="ArrowRight") steer = -0.08;
-  if(e.key==="ArrowUp") speed = 0.3;
-  if(e.key==="ArrowDown") speed = 0.05;
+// PC
+addEventListener("keydown",(e)=>{
+  if(e.key==="ArrowLeft") steer = 0.1;
+  if(e.key==="ArrowRight") steer = -0.1;
+  if(e.key==="ArrowUp") speed = 0.7;
+  if(e.key==="ArrowDown") speed = 0.15;
 });
 
-document.addEventListener("keyup",()=>{
-  steer = 0;
-});
+addEventListener("keyup",()=>steer=0);
+
+// MOBILE
+const bind=(id,down,up)=>{
+  const el=document.getElementById(id);
+  el.ontouchstart=el.onmousedown=down;
+  el.ontouchend=el.onmouseup=up;
+};
+
+bind("left",()=>steer=0.1,()=>steer=0);
+bind("right",()=>steer=-0.1,()=>steer=0);
+bind("gas",()=>speed=0.7,()=>speed=0.4);
+bind("brake",()=>speed=0.1,()=>speed=0.4);
 
 // =====================
 // LOOP
@@ -140,14 +207,18 @@ function animate(){
 
   car.rotation.y += steer;
 
-  car.position.x -= Math.sin(car.rotation.y) * speed;
-  car.position.z -= Math.cos(car.rotation.y) * speed;
+  car.position.x -= Math.sin(car.rotation.y)*speed;
+  car.position.z -= Math.cos(car.rotation.y)*speed;
 
-  camera.position.x = car.position.x + 6;
-  camera.position.z = car.position.z + 8;
-  camera.position.y = 5;
+  // CAMERA (cinematic drift feel)
+  camera.position.x += (car.position.x + 7 - camera.position.x)*0.07;
+  camera.position.z += (car.position.z + 12 - camera.position.z)*0.07;
+  camera.position.y = 6;
 
   camera.lookAt(car.position);
+
+  // particles move (speed illusion)
+  particles.rotation.z += 0.002;
 
   renderer.render(scene,camera);
 }
@@ -155,11 +226,12 @@ function animate(){
 animate();
 
 // resize
-window.addEventListener("resize",()=>{
-  camera.aspect = window.innerWidth/window.innerHeight;
+addEventListener("resize",()=>{
+  camera.aspect = innerWidth/innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth,window.innerHeight);
+  renderer.setSize(innerWidth,innerHeight);
 });
+
 </script>
 
 </body>
