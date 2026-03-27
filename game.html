@@ -79,7 +79,7 @@ canvas { display:block; margin:0 auto; background:#000; touch-action:none; }
     </div>
 
   </div>
-  
+
 </div>
 <div id="grialo">grialo</div>
 
@@ -314,21 +314,7 @@ document.addEventListener('keydown', e => {
         shootLaser();
     }
 });
-    function startGame(){
-  menu.style.display='none';
-  grialoDiv.style.display='flex';
-
-  setTimeout(()=>{
-    grialoDiv.style.display='none';
-    canvas.style.display='block';
-    if(!gameLoopStarted){
-      gameLoopStarted=true;
-      loop();
-    }
-  },2000);
-
-    }
-});     
+     
 </script>
 
 </body>
