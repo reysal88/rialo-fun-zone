@@ -59,26 +59,23 @@ canvas { display:block; margin:0 auto; background:#000; touch-action:none; }
 </head>
 <body>
 
-<div id="menu">
-  <img src="images/title.png" id="gameTitle" alt="Catch The Oracle">
+<div class="game-container">
 
-  <div style="display:flex; gap:20px; justify-content:center; margin-top:20px;">
-
-    <!-- GAME PESAWAT -->
-    <div>
-      <button id="playBtn">Play</button>
+  <!-- GAME PESAWAT -->
+  <div>
+    <div onclick="startGame()">
+      <img src="images/title.png" class="thumb">
     </div>
-
-    <!-- GAME BALAP -->
-    <div>
-      <a href="rialo-town-race.html">
-       <img src="images/rialo-race-cover.png" class="thumb">
-      </a>
-    </div>
-
   </div>
-</div>
 
+  <!-- GAME BALAP -->
+  <div>
+    <a href="rialo-town-race.html">
+      <img src="images/rialo-race-cover.png" class="thumb">
+    </a>
+  </div>
+
+</div>
 <div id="grialo">grialo</div>
 
 <canvas id="gameCanvas" width="400" height="600" style="display:none;"></canvas>
@@ -294,6 +291,19 @@ document.addEventListener('keydown', e => {
     }
     if(e.key === ' ' || e.code === 'Space') {
         shootLaser();
+    function startGame(){
+  menu.style.display='none';
+  grialoDiv.style.display='flex';
+
+  setTimeout(()=>{
+    grialoDiv.style.display='none';
+    canvas.style.display='block';
+    if(!gameLoopStarted){
+      gameLoopStarted=true;
+      loop();
+    }
+  },2000);
+
     }
 });     
 </script>
