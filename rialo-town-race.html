@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rialo Town Race</title>
+
+<style>
+body {
+  margin:0;
+  background:#111;
+  overflow:hidden;
+  text-align:center;
+  font-family:Arial;
+  color:white;
+}
+
+canvas {
+  display:block;
+  margin:0 auto;
+  background:#222;
+}
+
+#ui {
+  position:absolute;
+  top:10px;
+  width:100%;
+  text-align:center;
+  font-size:18px;
+}
+
+#gameOver {
+  position:absolute;
+  top:40%;
+  width:100%;
+  font-size:40px;
+  color:red;
+  display:none;
+}
+
+button {
+  margin-top:10px;
+  padding:10px 20px;
+  font-size:16px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="ui">Score: 0</div>
+<div id="gameOver">GAME OVER<br><button onclick="restart()">Restart</button></div>
+
+<canvas id="gameCanvas" width="400" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const ui = document.getElementById("ui");
+const gameOverText = document.getElementById("gameOver");
+
+let score = 0;
+let gameOver = false;
+
+// Player (mobil)
+const car = {
+  x: 180,
+  y: 500,
+  width: 40,
+  height: 80,
+  speed: 5
+};
+
+// Musuh
+const enemies = [];
+let enemySpeed = 3;
+
+// Jalan (garis)
+let roadLines = [];
+for(let i=0;i<10;i++){
+  roadLines.push({x:195, y:i*60});
+}
+
+// Spawn musuh
+function spawnEnemy(){
+  const xPositions = [120, 180, 240];
+  const x = xPositions[Math.floor(Math.random()*xPositions.length)];
+  enemies.push({x:x, y:-80, width:40, height:80});
+}
+setInterval(spawnEnemy, 1200);
+
+// Control keyboard
+document.addEventListener("keydown", e=>{
+  if(e.key === "ArrowLeft") car.x -= car.speed;
+  if(e.key === "ArrowRight") car.x += car.speed;
+});
+
+// Touch control
+canvas.addEventListener("touchmove", e=>{
+  const rect = canvas.getBoundingClientRect();
+  const touchX = e.touches[0].clientX - rect.left;
+  car.x = touchX - car.width/2;
+});
+
+// Update
+function update(){
+  if(gameOver) return;
+
+  score++;
+  ui.innerText = "Score: " + score;
+
+  // batas jalan
+  if(car.x < 100) car.x = 100;
+  if(car.x + car.width > 300) car.x = 300 - car.width;
+
+  // gerak garis jalan
+  roadLines.forEach(line=>{
+    line.y += 5;
+    if(line.y > canvas.height) line.y = -60;
+  });
+
+  // musuh
+  enemies.forEach((e,i)=>{
+    e.y += enemySpeed;
+
+    // tabrakan
+    if(car.x < e.x + e.width &&
+       car.x + car.width > e.x &&
+       car.y < e.y + e.height &&
+       car.y + car.height > e.y){
+         gameOver = true;
+         gameOverText.style.display = "block";
+    }
+
+    if(e.y > canvas.height){
+      enemies.splice(i,1);
+    }
+  });
+}
+
+// Draw
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // jalan
+  ctx.fillStyle="#333";
+  ctx.fillRect(100,0,200,600);
+
+  // garis jalan
+  ctx.fillStyle="white";
+  roadLines.forEach(line=>{
+    ctx.fillRect(line.x, line.y, 10, 40);
+  });
+
+  // mobil player
+  ctx.fillStyle="cyan";
+  ctx.fillRect(car.x, car.y, car.width, car.height);
+
+  // musuh
+  ctx.fillStyle="red";
+  enemies.forEach(e=>{
+    ctx.fillRect(e.x, e.y, e.width, e.height);
+  });
+}
+
+// Loop
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+
+// Restart
+function restart(){
+  enemies.length = 0;
+  score = 0;
+  gameOver = false;
+  gameOverText.style.display = "none";
+}
+</script>
+
+</body>
+</html>
