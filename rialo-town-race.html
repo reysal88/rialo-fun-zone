@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>RIALO CIRCUIT RACE v2</title>
+<title>RIALO CIRCUIT RACE v3 FIX</title>
 
 <style>
 body { margin:0; overflow:hidden; background:#000; }
@@ -17,17 +17,16 @@ body { margin:0; overflow:hidden; background:#000; }
   z-index:10;
 }
 
-#btn{
+#start{
   position:absolute;
   bottom:20px;
   left:50%;
   transform:translateX(-50%);
-  padding:10px 20px;
+  padding:12px 20px;
   background:#ff0033;
-  color:#fff;
+  color:white;
   border:none;
   border-radius:10px;
-  font-size:16px;
   z-index:10;
 }
 
@@ -40,7 +39,7 @@ body { margin:0; overflow:hidden; background:#000; }
   z-index:10;
 }
 
-.cbtn{
+.btn{
   width:55px;
   height:55px;
   background:#222;
@@ -56,13 +55,13 @@ body { margin:0; overflow:hidden; background:#000; }
 
 <body>
 
-<div id="ui">RIALO CIRCUIT v2</div>
-<button id="btn">START RACE</button>
+<div id="ui">RIALO CIRCUIT v3 FIX</div>
+<button id="start">START</button>
 
 <div id="ctrl">
-  <div class="cbtn" id="left">◀</div>
-  <div class="cbtn" id="right">▶</div>
-  <div class="cbtn" id="gas">▲</div>
+  <div class="btn" id="left">◀</div>
+  <div class="btn" id="right">▶</div>
+  <div class="btn" id="gas">▲</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
@@ -81,76 +80,58 @@ renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
 // LIGHT
-scene.add(new THREE.AmbientLight(0x555555));
+scene.add(new THREE.AmbientLight(0x444444));
 const dir = new THREE.DirectionalLight(0xffffff, 1);
 dir.position.set(10,20,10);
 scene.add(dir);
 
 // =====================
-// TRACK (4 TIKUNGAN CIRCUIT)
+// TRACK (SMOOTH CIRCUIT)
 // =====================
 const path = [
-  {x:0, z:0},      // START
-  {x:-15, z:-60},  // turn 1 kiri
-  {x:15, z:-120},  // turn 2 kanan
-  {x:-15, z:-180}, // turn 3 kiri
-  {x:0, z:-240},   // turn 4 kanan
-  {x:0, z:0}       // BACK TO START
+  {x:0, z:0},
+  {x:-20, z:-60},
+  {x:20, z:-120},
+  {x:-20, z:-180},
+  {x:0, z:-240},
+  {x:0, z:0}
 ];
 
-// visualize track (simple road points)
+// VISUAL ROAD (follow path)
 for(let i=0;i<path.length;i++){
   const p = path[i];
 
-  const marker = new THREE.Mesh(
-    new THREE.BoxGeometry(10,0.1,20),
+  const roadSeg = new THREE.Mesh(
+    new THREE.BoxGeometry(20,0.1,60),
     new THREE.MeshStandardMaterial({color:0x111111})
   );
-  marker.position.set(p.x,0,p.z);
-  scene.add(marker);
+  roadSeg.position.set(p.x,0,p.z);
+  scene.add(roadSeg);
 }
 
 // =====================
-// ROAD MARKERS (CENTER LINE STYLE)
+// MARKINGS (CENTER LINE)
 // =====================
-for(let i=0;i<80;i++){
+for(let i=0;i<120;i++){
   const line = new THREE.Mesh(
-    new THREE.BoxGeometry(0.2,0.1,2),
+    new THREE.BoxGeometry(0.3,0.1,2),
     new THREE.MeshBasicMaterial({color:0xffffff})
   );
-  line.position.set(0,0.01,-i*5);
+  line.position.set(0,0.02,-i*4);
   scene.add(line);
-}
-
-// =====================
-// SIMPLE CITY (BUILDINGS)
-// =====================
-function addBuilding(x,z){
-  const b = new THREE.Mesh(
-    new THREE.BoxGeometry(6,10+Math.random()*20,6),
-    new THREE.MeshStandardMaterial({color:0x333333})
-  );
-  b.position.set(x,b.geometry.parameters.height/2,z);
-  scene.add(b);
-}
-
-for(let i=0;i<20;i++){
-  addBuilding(-25,-i*15);
-  addBuilding(25,-i*15);
 }
 
 // =====================
 // CAR
 // =====================
 const car = new THREE.Mesh(
-  new THREE.BoxGeometry(1.5,0.8,3),
+  new THREE.BoxGeometry(1.6,0.8,3),
   new THREE.MeshStandardMaterial({
     color:0xff0033,
     emissive:0xff0033,
     emissiveIntensity:0.4
   })
 );
-
 car.position.set(0,1,0);
 scene.add(car);
 
@@ -163,34 +144,34 @@ const camOffset = new THREE.Vector3(0,5,10);
 // CONTROL
 // =====================
 let steer = 0;
-let speed = 0;
-
-document.getElementById("left").ontouchstart = ()=>steer=0.08;
-document.getElementById("right").ontouchstart = ()=>steer=-0.08;
-document.getElementById("gas").ontouchstart = ()=>speed=0.6;
-
-document.getElementById("left").ontouchend = ()=>steer=0;
-document.getElementById("right").ontouchend = ()=>steer=0;
-document.getElementById("gas").ontouchend = ()=>speed=0;
+let speed = 0.3;
 
 addEventListener("keydown",(e)=>{
   if(e.key==="ArrowLeft") steer=0.08;
   if(e.key==="ArrowRight") steer=-0.08;
   if(e.key==="ArrowUp") speed=0.6;
 });
-addEventListener("keyup",()=>{steer=0; speed=0;});
+
+addEventListener("keyup",()=>{steer=0; speed=0.3;});
+
+document.getElementById("left").ontouchstart=()=>steer=0.08;
+document.getElementById("right").ontouchstart=()=>steer=-0.08;
+document.getElementById("gas").ontouchstart=()=>speed=0.6;
+
+document.getElementById("left").ontouchend=()=>steer=0;
+document.getElementById("right").ontouchend=()=>steer=0;
+document.getElementById("gas").ontouchend=()=>speed=0.3;
 
 // =====================
-// RACE LOGIC (FOLLOW POINTS)
+// RACE SYSTEM
 // =====================
 let index = 0;
 let started = false;
 
-function startRace(){
+document.getElementById("start").onclick = ()=>{
   started = true;
   document.getElementById("ui").innerText = "GO!";
-}
-document.getElementById("btn").onclick = startRace;
+};
 
 // =====================
 // LOOP
@@ -200,35 +181,36 @@ function animate(){
 
   if(started){
 
-    // steering manual
+    // forward movement (FIX MAIN ISSUE)
+    car.position.z -= speed;
+
+    // steering
     car.rotation.y += steer;
 
-    // movement
-    car.position.x -= Math.sin(car.rotation.y)*speed;
-    car.position.z -= Math.cos(car.rotation.y)*speed;
+    car.position.x -= Math.sin(car.rotation.y) * speed;
 
-    // track follow assist (soft guide)
+    // TRACK FOLLOW (SMOOTH FIX)
     const target = path[index];
 
     const dx = target.x - car.position.x;
     const dz = target.z - car.position.z;
 
-    car.position.x += dx * 0.01;
-    car.position.z += dz * 0.01;
+    car.position.x += dx * 0.03;
+    car.position.z += dz * 0.03;
 
-    // next checkpoint
+    // next point
     if(Math.abs(dx)<3 && Math.abs(dz)<3){
       index++;
       if(index >= path.length){
-        index = 0; // BACK TO START (LAP LOOP)
+        index = 0; // loop back start
       }
     }
   }
 
-  // CAMERA FOLLOW
-  camera.position.x += (car.position.x + camOffset.x - camera.position.x)*0.1;
+  // CAMERA CHASE FIX
+  camera.position.x += (car.position.x + camOffset.x - camera.position.x)*0.12;
   camera.position.y = camOffset.y;
-  camera.position.z += (car.position.z + camOffset.z - camera.position.z)*0.1;
+  camera.position.z += (car.position.z + camOffset.z - camera.position.z)*0.12;
 
   camera.lookAt(car.position);
 
