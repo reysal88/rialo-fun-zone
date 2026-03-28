@@ -1,46 +1,77 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Tokyo Arcade Racing</title>
+<title>RIALO 3D RACE</title>
 
 <style>
 body { margin:0; overflow:hidden; background:#000; }
 
-#ui{
+#ui {
   position:absolute;
   top:10px;
   left:10px;
   color:#00ffff;
   font-family:Arial;
-  font-size:14px;
   z-index:10;
 }
 
-#finish{
+#startBtn {
   position:absolute;
-  top:50%;
+  bottom:20px;
   left:50%;
-  transform:translate(-50%,-50%);
-  color:yellow;
-  font-size:40px;
-  font-family:Arial;
-  display:none;
+  transform:translateX(-50%);
+  padding:12px 20px;
+  background:#ff0033;
+  color:white;
+  border:none;
+  font-size:16px;
+  border-radius:10px;
+  z-index:10;
+}
+
+#controls {
+  position:absolute;
+  bottom:20px;
+  left:20px;
+  display:flex;
+  gap:10px;
+  z-index:10;
+}
+
+.btn {
+  width:60px;
+  height:60px;
+  background:#222;
+  color:white;
+  font-size:20px;
+  border-radius:12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  user-select:none;
 }
 </style>
 </head>
 
 <body>
-<div id="ui">ARCADE RACING - Reach FINISH</div>
-<div id="finish">FINISH!</div>
+
+<div id="ui">RIALO 3D RACE - START WAITING</div>
+<button id="startBtn">START RACE</button>
+
+<div id="controls">
+  <div class="btn" id="left">◀</div>
+  <div class="btn" id="right">▶</div>
+  <div class="btn" id="gas">▲</div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
 <script>
 
 // =====================
-// BASIC SETUP
+// SETUP
 // =====================
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(0x000000, 20, 200);
@@ -51,103 +82,137 @@ renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
 // LIGHT
-scene.add(new THREE.AmbientLight(0x333333));
-const light = new THREE.DirectionalLight(0xffffff, 1);
-light.position.set(10,20,10);
-scene.add(light);
+scene.add(new THREE.AmbientLight(0x444444));
+const dir = new THREE.DirectionalLight(0xffffff, 1);
+dir.position.set(5,10,7);
+scene.add(dir);
 
 // =====================
-// TRACK (CURVE PATH - FIXED ROUTE)
+// ROAD
 // =====================
-const path = [];
-let z = 0;
-let x = 0;
+const road = new THREE.Mesh(
+  new THREE.PlaneGeometry(12, 500),
+  new THREE.MeshStandardMaterial({color:0x111111})
+);
+road.rotation.x = -Math.PI/2;
+road.position.z = -200;
+scene.add(road);
 
-// bikin track belok (arc sederhana)
-for(let i=0;i<200;i++){
-  z -= 5;
+// =====================
+// ROAD MARKINGS
+// =====================
 
-  if(i < 50) x += 0.1;
-  else if(i < 100) x -= 0.15;
-  else if(i < 150) x += 0.05;
-  else x -= 0.08;
-
-  path.push({x,z});
-}
-
-// road segments
-for(let i=0;i<path.length;i++){
-  const seg = new THREE.Mesh(
-    new THREE.PlaneGeometry(10,5),
-    new THREE.MeshStandardMaterial({color:0x111111})
+// center line dashed
+for(let i=0;i<100;i++){
+  const line = new THREE.Mesh(
+    new THREE.BoxGeometry(0.2,0.01,2),
+    new THREE.MeshBasicMaterial({color:0xffffff})
   );
-
-  seg.rotation.x = -Math.PI/2;
-  seg.position.set(path[i].x,0,path[i].z);
-  scene.add(seg);
+  line.position.set(0,0.01,-i*5);
+  scene.add(line);
 }
 
-// =====================
-// CITY (BETTER STRUCTURE)
-// =====================
-function building(x,z,h,color){
-  const b = new THREE.Mesh(
-    new THREE.BoxGeometry(6,h,6),
-    new THREE.MeshStandardMaterial({
-      color:0x111111,
-      emissive:color,
-      emissiveIntensity:0.3
-    })
-  );
-  b.position.set(x,h/2,z);
-  scene.add(b);
+// side lines
+function sideLine(x){
+  for(let i=0;i<100;i++){
+    const line = new THREE.Mesh(
+      new THREE.BoxGeometry(0.2,0.01,2),
+      new THREE.MeshBasicMaterial({color:0xffff00})
+    );
+    line.position.set(x,0.01,-i*5);
+    scene.add(line);
+  }
 }
-
-for(let i=0;i<path.length;i+=5){
-  const p = path[i];
-
-  building(p.x + 12, p.z, 20 + (i%4)*5, 0x00ffff);
-  building(p.x - 12, p.z, 25 + (i%6)*4, 0xff00ff);
-}
+sideLine(-6);
+sideLine(6);
 
 // =====================
 // CAR
 // =====================
 const car = new THREE.Mesh(
-  new THREE.BoxGeometry(1.6,0.8,3),
-  new THREE.MeshStandardMaterial({
-    color:0xff0000,
-    emissive:0xff0000,
-    emissiveIntensity:0.4
-  })
+  new THREE.BoxGeometry(1.5,0.8,3),
+  new THREE.MeshStandardMaterial({color:0xff0033})
 );
-
+car.position.set(0,1,0);
 scene.add(car);
-car.position.set(path[0].x,1,path[0].z);
 
 // =====================
-// GAME STATE
+// TRAFFIC LIGHT START
 // =====================
-let index = 0;
-let speed = 0.6;
+const pole = new THREE.Mesh(
+  new THREE.BoxGeometry(0.2,6,0.2),
+  new THREE.MeshStandardMaterial({color:0x555555})
+);
+pole.position.set(0,3,-10);
+scene.add(pole);
+
+const red = new THREE.Mesh(
+  new THREE.SphereGeometry(0.4),
+  new THREE.MeshBasicMaterial({color:0x330000})
+);
+red.position.set(0,5,-10);
+scene.add(red);
+
+const yellow = red.clone();
+yellow.position.y = 4;
+scene.add(yellow);
+
+const green = red.clone();
+green.position.y = 3;
+scene.add(green);
+
+// =====================
+// CAMERA CHASE
+// =====================
+const offset = new THREE.Vector3(0,5,10);
+
+// =====================
+// CONTROL
+// =====================
 let steer = 0;
+let speed = 0;
 
-let finished = false;
+function moveLeft(){ steer = 0.08; }
+function moveRight(){ steer = -0.08; }
+function gas(){ speed = 0.5; }
 
-// controls
+function stopSteer(){ steer = 0; }
+
+document.getElementById("left").ontouchstart = moveLeft;
+document.getElementById("right").ontouchstart = moveRight;
+document.getElementById("gas").ontouchstart = gas;
+
+document.getElementById("left").ontouchend = stopSteer;
+document.getElementById("right").ontouchend = stopSteer;
+document.getElementById("gas").ontouchend = ()=>speed=0;
+
 addEventListener("keydown",(e)=>{
-  if(e.key==="ArrowLeft") steer = 0.1;
-  if(e.key==="ArrowRight") steer = -0.1;
-  if(e.key==="ArrowUp") speed = 1;
-  if(e.key==="ArrowDown") speed = 0.2;
+  if(e.key==="ArrowLeft") steer=0.08;
+  if(e.key==="ArrowRight") steer=-0.08;
+  if(e.key==="ArrowUp") speed=0.5;
 });
-
-addEventListener("keyup",()=>steer=0);
+addEventListener("keyup",()=>{steer=0; speed=0;});
 
 // =====================
-// CAMERA (PS2 STYLE CHASE)
+// START LIGHT LOGIC
 // =====================
-const camOffset = new THREE.Vector3(0,6,12);
+let raceStarted = false;
+
+function startSequence(){
+  document.getElementById("ui").innerText = "READY...";
+
+  red.material.color.set(0xff0000);
+
+  setTimeout(()=>yellow.material.color.set(0xffff00),1000);
+  setTimeout(()=>yellow.material.color.set(0x222200),2000);
+  setTimeout(()=>{
+    green.material.color.set(0x00ff00);
+    raceStarted = true;
+    document.getElementById("ui").innerText = "GO!";
+  },3000);
+}
+
+document.getElementById("startBtn").onclick = startSequence;
 
 // =====================
 // LOOP
@@ -155,31 +220,16 @@ const camOffset = new THREE.Vector3(0,6,12);
 function animate(){
   requestAnimationFrame(animate);
 
-  if(finished) return;
+  if(raceStarted){
+    car.rotation.y += steer;
 
-  index += speed;
-  if(index >= path.length){
-    document.getElementById("finish").style.display="block";
-    finished = true;
-    return;
+    car.position.x -= Math.sin(car.rotation.y)*speed;
+    car.position.z -= Math.cos(car.rotation.y)*speed;
   }
 
-  const target = path[Math.floor(index)];
-  const next = path[Math.floor(index)+1] || target;
-
-  // direction follow track
-  car.position.x = target.x;
-  car.position.z = target.z;
-
-  const dx = next.x - target.x;
-  const dz = next.z - target.z;
-
-  car.rotation.y = Math.atan2(dx, dz);
-
-  // camera follow (SMOOTH)
-  camera.position.x += (car.position.x + camOffset.x - camera.position.x)*0.08;
-  camera.position.z += (car.position.z + camOffset.z - camera.position.z)*0.08;
-  camera.position.y = camOffset.y;
+  camera.position.x += (car.position.x + offset.x - camera.position.x)*0.1;
+  camera.position.y = offset.y;
+  camera.position.z += (car.position.z + offset.z - camera.position.z)*0.1;
 
   camera.lookAt(car.position);
 
@@ -188,6 +238,7 @@ function animate(){
 
 animate();
 
+// resize
 addEventListener("resize",()=>{
   camera.aspect = innerWidth/innerHeight;
   camera.updateProjectionMatrix();
