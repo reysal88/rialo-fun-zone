@@ -3,44 +3,96 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RIALO RACING v5</title>
+<title>RIALO CIRCUIT RACE</title>
 
 <style>
 body { margin:0; overflow:hidden; background:#87CEEB; }
-#ui{
-  position:absolute;
-  top:10px;
-  left:10px;
-  font-family:Arial;
-  font-weight:bold;
-  z-index:10;
-}
 </style>
 </head>
 
 <body>
-<div id="ui">RIALO RACING v5 (CAMERA + HANDLING)</div>
-
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
 <script>
 
 // =====================
-// BASIC SCENE
+// SCENE
 // =====================
 const scene = new THREE.Scene();
 
 const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 1000);
-
 const renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
 // LIGHT
-scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+scene.add(new THREE.AmbientLight(0xffffff, 1));
 const sun = new THREE.DirectionalLight(0xffffff, 1);
 sun.position.set(10,20,10);
 scene.add(sun);
+
+// =====================
+// CIRCUIT ROAD (BERBELOK)
+// =====================
+const path = [
+  new THREE.Vector3(0,0,0),
+  new THREE.Vector3(-15,0,-30),
+  new THREE.Vector3(15,0,-60),
+  new THREE.Vector3(-15,0,-90),
+  new THREE.Vector3(15,0,-120),
+  new THREE.Vector3(0,0,-150),
+  new THREE.Vector3(0,0,0) // loop balik start
+];
+
+// =====================
+// ROAD BUILDER
+// =====================
+function makeRoad(a,b){
+
+  const dx = b.x - a.x;
+  const dz = b.z - a.z;
+  const dist = Math.sqrt(dx*dx + dz*dz);
+
+  const road = new THREE.Mesh(
+    new THREE.BoxGeometry(10,0.2,dist),
+    new THREE.MeshStandardMaterial({color:0x2b2b2b})
+  );
+
+  road.position.set(
+    (a.x + b.x)/2,
+    0,
+    (a.z + b.z)/2
+  );
+
+  road.rotation.y = Math.atan2(dx, dz);
+
+  scene.add(road);
+
+  // MARKAH JALAN
+  const count = Math.floor(dist/3);
+
+  for(let i=0;i<count;i++){
+    const t = i / count;
+
+    const x = a.x + (b.x - a.x) * t;
+    const z = a.z + (b.z - a.z) * t;
+
+    const mark = new THREE.Mesh(
+      new THREE.BoxGeometry(0.2,0.05,1),
+      new THREE.MeshBasicMaterial({color:0xffffff})
+    );
+
+    mark.position.set(x,0.15,z);
+    mark.rotation.y = road.rotation.y;
+
+    scene.add(mark);
+  }
+}
+
+// build road
+for(let i=0;i<path.length-1;i++){
+  makeRoad(path[i], path[i+1]);
+}
 
 // =====================
 // CAR
@@ -53,85 +105,59 @@ car.position.set(0,1,0);
 scene.add(car);
 
 // =====================
-// PHYSICS (FIXED HANDLING)
-// =====================
-let speed = 0;
-let maxSpeed = 1.5;
-let accel = 0.02;
-let brake = 0.03;
-let friction = 0.97;
-let turn = 0;
-
-// =====================
 // INPUT
 // =====================
-let keys = {
-  up:false,
-  down:false,
-  left:false,
-  right:false
-};
+let keys = {};
 
-addEventListener("keydown",(e)=>{
-  if(e.key==="ArrowUp") keys.up=true;
-  if(e.key==="ArrowDown") keys.down=true;
-  if(e.key==="ArrowLeft") keys.left=true;
-  if(e.key==="ArrowRight") keys.right=true;
-});
-
-addEventListener("keyup",(e)=>{
-  if(e.key==="ArrowUp") keys.up=false;
-  if(e.key==="ArrowDown") keys.down=false;
-  if(e.key==="ArrowLeft") keys.left=false;
-  if(e.key==="ArrowRight") keys.right=false;
-});
+addEventListener("keydown",e=>keys[e.key]=true);
+addEventListener("keyup",e=>keys[e.key]=false);
 
 // =====================
-// UPDATE LOOP
+// MOVEMENT
+// =====================
+let speed = 0;
+let rotSpeed = 0.03;
+
+function updateCar(){
+
+  if(keys["ArrowUp"]) speed += 0.02;
+  if(keys["ArrowDown"]) speed -= 0.03;
+
+  speed *= 0.98;
+
+  if(keys["ArrowLeft"]) car.rotation.y += rotSpeed;
+  if(keys["ArrowRight"]) car.rotation.y -= rotSpeed;
+
+  car.position.x -= Math.sin(car.rotation.y) * speed;
+  car.position.z -= Math.cos(car.rotation.y) * speed;
+}
+
+// =====================
+// CAMERA CHASE (FIX BELAKANG)
+// =====================
+const camOffset = new THREE.Vector3(0, 5, 10);
+
+function updateCamera(){
+
+  const rot = new THREE.Matrix4();
+  rot.extractRotation(car.matrix);
+
+  const behind = camOffset.clone().applyMatrix4(rot);
+
+  const target = new THREE.Vector3().addVectors(car.position, behind);
+
+  camera.position.lerp(target, 0.1);
+  camera.lookAt(car.position);
+}
+
+// =====================
+// LOOP
 // =====================
 function animate(){
   requestAnimationFrame(animate);
 
-  // ===== ENGINE =====
-  if(keys.up){
-    speed += accel;
-  }
-  if(keys.down){
-    speed -= brake;
-  }
-
-  // friction
-  speed *= friction;
-
-  // clamp
-  if(speed > maxSpeed) speed = maxSpeed;
-  if(speed < -0.5) speed = -0.5;
-
-  // ===== STEERING (lebih realistis: ikut speed) =====
-  let steerStrength = 0.03;
-  if(Math.abs(speed) > 0.1){
-    if(keys.left) car.rotation.y += steerStrength;
-    if(keys.right) car.rotation.y -= steerStrength;
-  }
-
-  // ===== MOVE CAR =====
-  car.position.x -= Math.sin(car.rotation.y) * speed;
-  car.position.z -= Math.cos(car.rotation.y) * speed;
-
-  // =====================
-  // CAMERA CHASE FIX (INI KUNCI)
-  // =====================
-  const offset = new THREE.Vector3(0, 5, 10);
-
-  const rotMatrix = new THREE.Matrix4();
-  rotMatrix.extractRotation(car.matrix);
-
-  const behind = offset.clone().applyMatrix4(rotMatrix);
-
-  const desiredPos = new THREE.Vector3().addVectors(car.position, behind);
-
-  camera.position.lerp(desiredPos, 0.08);
-  camera.lookAt(car.position);
+  updateCar();
+  updateCamera();
 
   renderer.render(scene,camera);
 }
@@ -146,6 +172,5 @@ addEventListener("resize",()=>{
 });
 
 </script>
-
 </body>
 </html>
