@@ -3,130 +3,146 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RIALO TRACK FIX v2</title>
-
+<title>RIALO LOOP ROAD v3</title>
 <style>
 body { margin:0; overflow:hidden; background:#87CEEB; }
-
-#ui{
-  position:absolute;
-  top:10px;
-  left:10px;
-  font-family:Arial;
-  color:black;
-  font-weight:bold;
-  z-index:10;
-}
 </style>
 </head>
 
 <body>
-<div id="ui">RIALO TRACK FIX v2 - ROAD + NAVIGATION</div>
-
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
 <script>
 
-// ===================
-// SCENE
-// ===================
+// =====================
+// BASIC SCENE
+// =====================
 const scene = new THREE.Scene();
 
 const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 1000);
-camera.position.set(0,10,15);
+camera.position.set(0,15,20);
 
 const renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// ===================
-// LIGHT (BIAR GAK GELAP)
-// ===================
-scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-
+// LIGHT (biar tidak gelap)
+scene.add(new THREE.AmbientLight(0xffffff, 0.8));
 const sun = new THREE.DirectionalLight(0xffffff, 1);
 sun.position.set(10,20,10);
 scene.add(sun);
 
-// ===================
-// ROAD MATERIAL LOOK
-// ===================
-function createRoadSegment(x,z,rot,length){
+// =====================
+// LOOP ROAD PATH (CIRCUIT)
+// =====================
+const path = [
+  new THREE.Vector3(0,0,0),
+  new THREE.Vector3(-20,0,-40),
+  new THREE.Vector3(20,0,-80),
+  new THREE.Vector3(-20,0,-120),
+  new THREE.Vector3(20,0,-160),
+  new THREE.Vector3(0,0,-200),
+  new THREE.Vector3(0,0,0) // BACK TO START (LOOP)
+];
+
+// =====================
+// ROAD BUILDER (SMOOTH SEGMENT)
+// =====================
+function buildRoad(a,b){
+
+  const dx = b.x - a.x;
+  const dz = b.z - a.z;
+
+  const dist = Math.sqrt(dx*dx + dz*dz);
+
   const road = new THREE.Mesh(
-    new THREE.BoxGeometry(8,0.2,length),
-    new THREE.MeshStandardMaterial({color:0x333333})
+    new THREE.BoxGeometry(10,0.2,dist),
+    new THREE.MeshStandardMaterial({color:0x2b2b2b})
   );
 
-  road.position.set(x,0,z);
-  road.rotation.y = rot;
+  road.position.set(
+    (a.x + b.x)/2,
+    0,
+    (a.z + b.z)/2
+  );
+
+  road.rotation.y = Math.atan2(dx, dz);
 
   scene.add(road);
 
-  // MARKAH TENGAH
-  for(let i=0;i<length/2;i++){
-    const line = new THREE.Mesh(
-      new THREE.BoxGeometry(0.2,0.1,0.5),
+  // =====================
+  // MARKAH JALAN (PUTIH)
+  // =====================
+  const marks = Math.floor(dist / 2);
+
+  for(let i=0;i<marks;i++){
+
+    const t = i / marks;
+
+    const x = a.x + (b.x - a.x) * t;
+    const z = a.z + (b.z - a.z) * t;
+
+    const mark = new THREE.Mesh(
+      new THREE.BoxGeometry(0.3,0.05,1),
       new THREE.MeshBasicMaterial({color:0xffffff})
     );
 
-    line.position.set(
-      x + Math.sin(rot)*i*2,
-      0.2,
-      z + Math.cos(rot)*i*2
-    );
+    mark.position.set(x,0.2,z);
 
-    scene.add(line);
+    mark.rotation.y = road.rotation.y;
+
+    scene.add(mark);
   }
 }
 
-// ===================
-// TRACK (4 TURNS)
-// ===================
-createRoadSegment(0,0,0,20);
-createRoadSegment(0,-20,Math.PI/2,20);
-createRoadSegment(20,-20,0,20);
-createRoadSegment(20,-40,Math.PI/2,20);
-createRoadSegment(0,-40,Math.PI,20);
-
-// ===================
-// NAVIGATION ARROWS
-// ===================
-function arrow(x,z){
-  const a = new THREE.Mesh(
-    new THREE.BoxGeometry(1,1,1),
-    new THREE.MeshBasicMaterial({color:0xff0000})
-  );
-  a.position.set(x,1,z);
-  scene.add(a);
+// =====================
+// BUILD FULL CIRCUIT ROAD
+// =====================
+for(let i=0;i<path.length-1;i++){
+  buildRoad(path[i], path[i+1]);
 }
 
-arrow(0,-10);
-arrow(0,-30);
-arrow(20,-30);
-
-// ===================
-// CAR
-// ===================
+// =====================
+// SIMPLE CAR (VIEW TEST)
+// =====================
 const car = new THREE.Mesh(
   new THREE.BoxGeometry(1.5,0.8,3),
   new THREE.MeshStandardMaterial({color:0xff0000})
 );
-car.position.set(0,1,5);
+
+car.position.set(0,1,0);
 scene.add(car);
 
-// ===================
-// MOVE SIMPLE
-// ===================
-let speed = 0.2;
+// =====================
+// MOVE ALONG LOOP (TEST RACE FLOW)
+// =====================
+let index = 0;
+let t = 0;
+let speed = 0.002;
 
 function animate(){
   requestAnimationFrame(animate);
 
-  car.position.z -= speed;
+  const a = path[index];
+  const b = path[index+1];
 
-  camera.position.x = car.position.x;
-  camera.position.z = car.position.z + 10;
-  camera.position.y = 8;
+  t += speed;
+
+  if(t >= 1){
+    t = 0;
+    index++;
+
+    if(index >= path.length-1){
+      index = 0; // LOOP BACK START
+    }
+  }
+
+  car.position.x = a.x + (b.x - a.x) * t;
+  car.position.z = a.z + (b.z - a.z) * t;
+
+  camera.position.x += (car.position.x - camera.position.x)*0.08;
+  camera.position.z += (car.position.z + 15 - camera.position.z)*0.08;
+  camera.position.y = 12;
 
   camera.lookAt(car.position);
 
@@ -135,7 +151,12 @@ function animate(){
 
 animate();
 
-</script>
+addEventListener("resize",()=>{
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
 
+</script>
 </body>
 </html>
