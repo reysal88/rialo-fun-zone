@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RIALO CITY RACE</title>
+<title>RIALO ULTRA LIGHT</title>
 
 <style>
 body { margin:0; overflow:hidden; background:#000; }
@@ -19,15 +19,15 @@ body { margin:0; overflow:hidden; background:#000; }
 }
 
 .btn{
-  width:70px;
-  height:70px;
+  width:65px;
+  height:65px;
   background:#222;
   color:#fff;
-  font-size:24px;
+  font-size:22px;
   display:flex;
   align-items:center;
   justify-content:center;
-  border-radius:12px;
+  border-radius:10px;
 }
 </style>
 </head>
@@ -44,24 +44,22 @@ body { margin:0; overflow:hidden; background:#000; }
 
 <script>
 
-// ================= SCENE =================
+// ===== SCENE (ULTRA LIGHT) =====
 const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0x000000, 20, 200);
 
 const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 1000);
 
-const renderer = new THREE.WebGLRenderer({antialias:true});
+const renderer = new THREE.WebGLRenderer({
+  antialias:false,
+  powerPreference:"low-power"
+});
 renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// ================= LIGHT =================
-scene.add(new THREE.AmbientLight(0x555555));
+// ===== LIGHT (SUPER SIMPLE) =====
+scene.add(new THREE.AmbientLight(0xffffff, 1));
 
-const neonLight = new THREE.DirectionalLight(0x88aaff,1);
-neonLight.position.set(10,20,10);
-scene.add(neonLight);
-
-// ================= ROAD =================
+// ===== ROAD LOOP =====
 const path = [
   new THREE.Vector3(0,0,0),
   new THREE.Vector3(-20,0,-40),
@@ -72,123 +70,80 @@ const path = [
   new THREE.Vector3(0,0,0)
 ];
 
-function buildRoad(a,b){
-  const dx = b.x-a.x;
-  const dz = b.z-a.z;
-  const dist = Math.sqrt(dx*dx+dz*dz);
+function road(a,b){
+  const dx=b.x-a.x;
+  const dz=b.z-a.z;
+  const dist=Math.sqrt(dx*dx+dz*dz);
 
-  const road = new THREE.Mesh(
-    new THREE.BoxGeometry(12,0.2,dist),
-    new THREE.MeshStandardMaterial({color:0x222222})
+  const r=new THREE.Mesh(
+    new THREE.BoxGeometry(10,0.2,dist),
+    new THREE.MeshBasicMaterial({color:0x333333})
   );
 
-  road.position.set((a.x+b.x)/2,0,(a.z+b.z)/2);
-  road.rotation.y = Math.atan2(dx,dz);
-  scene.add(road);
+  r.position.set((a.x+b.x)/2,0,(a.z+b.z)/2);
+  r.rotation.y=Math.atan2(dx,dz);
+  scene.add(r);
 
-  for(let i=0;i<dist/3;i++){
-    const t = i/(dist/3);
-    const x = a.x+(b.x-a.x)*t;
-    const z = a.z+(b.z-a.z)*t;
+  // markah sedikit aja
+  for(let i=0;i<dist/6;i++){
+    const t=i/(dist/6);
+    const x=a.x+(b.x-a.x)*t;
+    const z=a.z+(b.z-a.z)*t;
 
-    const mark = new THREE.Mesh(
-      new THREE.BoxGeometry(0.3,0.05,1),
+    const m=new THREE.Mesh(
+      new THREE.BoxGeometry(0.2,0.05,1),
       new THREE.MeshBasicMaterial({color:0xffffff})
     );
 
-    mark.position.set(x,0.15,z);
-    mark.rotation.y = road.rotation.y;
-    scene.add(mark);
+    m.position.set(x,0.15,z);
+    m.rotation.y=r.rotation.y;
+    scene.add(m);
   }
 }
 
-for(let i=0;i<path.length-1;i++){
-  buildRoad(path[i],path[i+1]);
-}
+for(let i=0;i<path.length-1;i++) road(path[i],path[i+1]);
 
-// ================= BUILDINGS =================
-function createBuilding(x,z){
-  const h = 10 + Math.random()*40;
-
-  const b = new THREE.Mesh(
-    new THREE.BoxGeometry(6,h,6),
-    new THREE.MeshStandardMaterial({
-      color:0x111133,
-      emissive:0x2222ff,
-      emissiveIntensity:0.5,
-      metalness:0.8,
-      roughness:0.2
-    })
-  );
-
-  b.position.set(x,h/2,z);
-  scene.add(b);
-}
-
-// sebar gedung
-for(let i=0;i<80;i++){
-  let x = (Math.random()-0.5)*150;
-  let z = -Math.random()*250;
+// ===== BUILDINGS (ULTRA SIMPLE) =====
+for(let i=0;i<20;i++){
+  let x=(Math.random()-0.5)*120;
+  let z=-Math.random()*200;
 
   if(Math.abs(x)>15){
-    createBuilding(x,z);
+    const b=new THREE.Mesh(
+      new THREE.BoxGeometry(5,5+Math.random()*15,5),
+      new THREE.MeshBasicMaterial({color:0x111133})
+    );
+    b.position.set(x,b.geometry.parameters.height/2,z);
+    scene.add(b);
   }
 }
 
-// ================= LAMP =================
-function createLamp(x,z){
+// ===== FAKE LAMP (NO REAL LIGHT) =====
+for(let i=0;i<15;i++){
+  let z=-i*15;
 
-  const pole = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.1,0.1,5),
-    new THREE.MeshStandardMaterial({color:0x888888})
+  const lamp=new THREE.Mesh(
+    new THREE.SphereGeometry(0.3),
+    new THREE.MeshBasicMaterial({color:0xffffaa})
   );
 
-  pole.position.set(x,2.5,z);
-  scene.add(pole);
+  lamp.position.set(-7,4,z);
+  scene.add(lamp);
 
-  const light = new THREE.PointLight(0xffffaa,1,20);
-  light.position.set(x,5,z);
-  scene.add(light);
+  const lamp2=lamp.clone();
+  lamp2.position.x=7;
+  scene.add(lamp2);
 }
 
-for(let i=0;i<25;i++){
-  createLamp(-8,-i*10);
-  createLamp(8,-i*10);
-}
-
-// ================= SIGN =================
-function createSign(x,z){
-
-  const pole = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.1,0.1,3),
-    new THREE.MeshStandardMaterial({color:0xffffff})
-  );
-
-  pole.position.set(x,1.5,z);
-  scene.add(pole);
-
-  const sign = new THREE.Mesh(
-    new THREE.BoxGeometry(2,1,0.2),
-    new THREE.MeshBasicMaterial({color:0xff0000})
-  );
-
-  sign.position.set(x,3,z);
-  scene.add(sign);
-}
-
-createSign(-15,-40);
-createSign(15,-80);
-createSign(-15,-120);
-
-// ================= CAR =================
-const car = new THREE.Mesh(
-  new THREE.BoxGeometry(1.6,0.8,3),
-  new THREE.MeshStandardMaterial({color:0xff0000})
+// ===== CAR =====
+const car=new THREE.Mesh(
+  new THREE.BoxGeometry(1.5,0.7,3),
+  new THREE.MeshBasicMaterial({color:0xff0000})
 );
 car.position.set(0,1,0);
 scene.add(car);
 
-// ================= INPUT =================
+// ===== INPUT =====
 let keys={left:false,right:false,gas:false};
 
 addEventListener("keydown",e=>{
@@ -213,13 +168,15 @@ bind("left","left");
 bind("right","right");
 bind("gas","gas");
 
-// ================= DRIVING =================
+// ===== DRIVING =====
 let speed=0;
 
 function updateCar(){
-  if(keys.gas) speed+=0.03;
+  if(keys.gas) speed+=0.04;
+
   speed*=0.97;
-  if(speed>1.3) speed=1.3;
+
+  if(speed>1.4) speed=1.4;
 
   if(keys.left) car.rotation.y+=0.04;
   if(keys.right) car.rotation.y-=0.04;
@@ -228,10 +185,10 @@ function updateCar(){
   car.position.z -= Math.cos(car.rotation.y)*speed;
 }
 
-// ================= CAMERA =================
-const offset=new THREE.Vector3(0,5,10);
+// ===== CAMERA =====
+const offset=new THREE.Vector3(0,4,8);
 
-function updateCamera(){
+function cam(){
   const m=new THREE.Matrix4();
   m.extractRotation(car.matrix);
 
@@ -242,12 +199,12 @@ function updateCamera(){
   camera.lookAt(car.position);
 }
 
-// ================= LOOP =================
+// ===== LOOP =====
 function animate(){
   requestAnimationFrame(animate);
 
   updateCar();
-  updateCamera();
+  cam();
 
   renderer.render(scene,camera);
 }
