@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RIALO FINAL CLEAN RACE</title>
+<title>Rialo Final Race</title>
 
 <style>
 body { margin:0; overflow:hidden; background:#000; }
@@ -16,7 +16,6 @@ body { margin:0; overflow:hidden; background:#000; }
   font-family:Arial;
   font-size:18px;
 }
-
 #controls{
   position:fixed;
   bottom:20px;
@@ -25,7 +24,6 @@ body { margin:0; overflow:hidden; background:#000; }
   justify-content:center;
   gap:10px;
 }
-
 .btn{
   width:65px;
   height:65px;
@@ -57,87 +55,65 @@ body { margin:0; overflow:hidden; background:#000; }
 // ===== SCENE =====
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 1000);
-
 const renderer = new THREE.WebGLRenderer({antialias:false});
 renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
 scene.add(new THREE.AmbientLight(0xffffff,1));
 
-// ===== PATH (CIRCUIT JELAS) =====
-const path = [
+// ===== TRACK =====
+const curve = new THREE.CatmullRomCurve3([
   new THREE.Vector3(0,0,0),
   new THREE.Vector3(0,0,-60),
-  new THREE.Vector3(40,0,-100),
+  new THREE.Vector3(40,0,-120),
   new THREE.Vector3(40,0,-160),
   new THREE.Vector3(0,0,-200),
   new THREE.Vector3(-40,0,-160),
-  new THREE.Vector3(-40,0,-100),
+  new THREE.Vector3(-40,0,-120),
   new THREE.Vector3(0,0,-60),
   new THREE.Vector3(0,0,0)
-];
+], true);
 
 // ===== ROAD =====
-function road(a,b){
+const pts = curve.getPoints(200);
+
+for(let i=0;i<pts.length-1;i++){
+  const a=pts[i];
+  const b=pts[i+1];
+
   const dx=b.x-a.x;
   const dz=b.z-a.z;
   const dist=Math.sqrt(dx*dx+dz*dz);
 
-  const r=new THREE.Mesh(
+  const road=new THREE.Mesh(
     new THREE.BoxGeometry(10,0.2,dist),
     new THREE.MeshBasicMaterial({color:0x333333})
   );
 
-  r.position.set((a.x+b.x)/2,0,(a.z+b.z)/2);
-  r.rotation.y=Math.atan2(dx,dz);
-  scene.add(r);
-
-  for(let i=0;i<dist/6;i++){
-    const t=i/(dist/6);
-    const x=a.x+(b.x-a.x)*t;
-    const z=a.z+(b.z-a.z)*t;
-
-    const m=new THREE.Mesh(
-      new THREE.BoxGeometry(0.2,0.05,1),
-      new THREE.MeshBasicMaterial({color:0xffffff})
-    );
-
-    m.position.set(x,0.15,z);
-    m.rotation.y=r.rotation.y;
-    scene.add(m);
-  }
+  road.position.set((a.x+b.x)/2,0,(a.z+b.z)/2);
+  road.rotation.y=Math.atan2(dx,dz);
+  scene.add(road);
 }
 
-for(let i=0;i<path.length-1;i++) road(path[i],path[i+1]);
-
-// ===== GARIS START =====
-const finish = new THREE.Mesh(
+// ===== START / FINISH LINE =====
+const line = new THREE.Mesh(
   new THREE.BoxGeometry(10,0.1,3),
   new THREE.MeshBasicMaterial({color:0xffffff})
 );
-finish.position.set(0,0.2,0);
-scene.add(finish);
+line.position.set(0,0.2,0);
+scene.add(line);
 
-// ===== CHECKPOINT GARIS =====
-function createCheckpoint(x,z){
-  const cp = new THREE.Mesh(
-    new THREE.BoxGeometry(10,0.1,2),
-    new THREE.MeshBasicMaterial({color:0x00ff00})
-  );
-  cp.position.set(x,0.2,z);
-  scene.add(cp);
-  return cp;
-}
-
+// ===== CHECKPOINTS (WAJIB URUT) =====
 const checkpoints = [
-  createCheckpoint(0,-60),
-  createCheckpoint(40,-120),
-  createCheckpoint(0,-200),
-  createCheckpoint(-40,-120)
+  new THREE.Vector3(0,0,-60),
+  new THREE.Vector3(40,0,-140),
+  new THREE.Vector3(0,0,-200),
+  new THREE.Vector3(-40,0,-140)
 ];
 
 let cpIndex = 0;
 let lap = 1;
+let prevZ = 5;
 
 // ===== CAR =====
 const car=new THREE.Mesh(
@@ -161,7 +137,6 @@ addEventListener("keyup",e=>{
   if(e.key==="ArrowUp") keys.gas=false;
 });
 
-// mobile
 function bind(id,key){
   const el=document.getElementById(id);
   el.ontouchstart=()=>keys[key]=true;
@@ -186,37 +161,38 @@ function updateCar(){
   car.position.z -= Math.cos(car.rotation.y)*speed;
 }
 
-// ===== DETEKSI GARIS =====
-function hitLine(obj){
-  const dx = Math.abs(car.position.x - obj.position.x);
-  const dz = Math.abs(car.position.z - obj.position.z);
-
-  return dx < 6 && dz < 3;
+// ===== CHECKPOINT DETECTION =====
+function near(a,b){
+  return a.distanceTo(b) < 10;
 }
 
-// ===== RACE SYSTEM (VALID) =====
+// ===== RACE SYSTEM FINAL =====
 function checkRace(){
 
   // checkpoint harus urut
-  if(hitLine(checkpoints[cpIndex])){
+  if(near(car.position, checkpoints[cpIndex])){
     cpIndex++;
+  }
 
-    if(cpIndex >= checkpoints.length){
+  // kalau semua checkpoint sudah dilewati
+  if(cpIndex >= checkpoints.length){
 
-      // harus finish
-      if(hitLine(finish)){
-        lap++;
-        cpIndex = 0;
+    // crossing line (arah benar)
+    if(prevZ > 0 && car.position.z <= 0){
 
-        if(lap > 5){
-          alert("FINISH! 🏁");
-          lap = 1;
-        }
+      lap++;
+      cpIndex = 0;
 
-        document.getElementById("ui").innerText = "Lap: " + lap + " / 5";
+      if(lap > 5){
+        alert("FINISH! 🏁");
+        lap = 1;
       }
+
+      document.getElementById("ui").innerText = "Lap: " + lap + " / 5";
     }
   }
+
+  prevZ = car.position.z;
 }
 
 // ===== CAMERA =====
@@ -244,12 +220,6 @@ function animate(){
   renderer.render(scene,camera);
 }
 animate();
-
-addEventListener("resize",()=>{
-  camera.aspect=innerWidth/innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth,innerHeight);
-});
 
 </script>
 
