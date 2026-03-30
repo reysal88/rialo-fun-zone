@@ -3,32 +3,50 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RIALO CIRCUIT RACE FINAL</title>
+<title>RIALO RACE FINAL</title>
 
 <style>
 body { margin:0; overflow:hidden; background:#87CEEB; }
-#hint{
-  position:absolute;
-  top:10px;
-  left:10px;
-  color:white;
-  font-family:Arial;
-  font-weight:bold;
+
+/* UI MOBILE */
+#controls{
+  position:fixed;
+  bottom:20px;
+  width:100%;
+  display:flex;
+  justify-content:center;
+  gap:10px;
   z-index:10;
+}
+
+.btn{
+  width:70px;
+  height:70px;
+  background:#222;
+  color:#fff;
+  font-size:24px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:12px;
+  user-select:none;
 }
 </style>
 </head>
 
 <body>
-<div id="hint">RIALO CIRCUIT RACE FINAL - Arrow Keys / Mobile tap later</div>
+
+<div id="controls">
+  <div class="btn" id="left">◀</div>
+  <div class="btn" id="gas">▲</div>
+  <div class="btn" id="right">▶</div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
 <script>
 
-// =====================
 // SCENE
-// =====================
 const scene = new THREE.Scene();
 
 const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 1000);
@@ -42,9 +60,7 @@ const light = new THREE.DirectionalLight(0xffffff, 1);
 light.position.set(10,20,10);
 scene.add(light);
 
-// =====================
-// CIRCUIT PATH (BERBELOK + LOOP)
-// =====================
+// ================= ROAD LOOP =================
 const path = [
   new THREE.Vector3(0,0,0),
   new THREE.Vector3(-20,0,-30),
@@ -55,11 +71,7 @@ const path = [
   new THREE.Vector3(0,0,0)
 ];
 
-// =====================
-// ROAD
-// =====================
 function buildRoad(a,b){
-
   const dx = b.x - a.x;
   const dz = b.z - a.z;
   const dist = Math.sqrt(dx*dx + dz*dz);
@@ -69,32 +81,22 @@ function buildRoad(a,b){
     new THREE.MeshStandardMaterial({color:0x2a2a2a})
   );
 
-  road.position.set(
-    (a.x + b.x)/2,
-    0,
-    (a.z + b.z)/2
-  );
-
+  road.position.set((a.x+b.x)/2,0,(a.z+b.z)/2);
   road.rotation.y = Math.atan2(dx, dz);
   scene.add(road);
 
-  // MARKAH JALAN
-  const count = Math.floor(dist / 3);
-
-  for(let i=0;i<count;i++){
-    const t = i / count;
-
-    const x = a.x + (b.x - a.x) * t;
-    const z = a.z + (b.z - a.z) * t;
+  for(let i=0;i<dist/3;i++){
+    const t = i/(dist/3);
+    const x = a.x+(b.x-a.x)*t;
+    const z = a.z+(b.z-a.z)*t;
 
     const mark = new THREE.Mesh(
-      new THREE.BoxGeometry(0.25,0.05,1),
+      new THREE.BoxGeometry(0.3,0.05,1),
       new THREE.MeshBasicMaterial({color:0xffffff})
     );
 
     mark.position.set(x,0.15,z);
     mark.rotation.y = road.rotation.y;
-
     scene.add(mark);
   }
 }
@@ -103,92 +105,75 @@ for(let i=0;i<path.length-1;i++){
   buildRoad(path[i], path[i+1]);
 }
 
-// =====================
-// CAR
-// =====================
+// ================= CAR =================
 const car = new THREE.Mesh(
   new THREE.BoxGeometry(1.6,0.8,3),
   new THREE.MeshStandardMaterial({color:0xff0000})
 );
-
 car.position.set(0,1,0);
 scene.add(car);
 
-// =====================
-// INPUT
-// =====================
-let keys = {};
+// ================= INPUT =================
+let keys = {left:false,right:false,gas:false};
 
-addEventListener("keydown",e=>keys[e.key]=true);
-addEventListener("keyup",e=>keys[e.key]=false);
+// PC
+addEventListener("keydown",e=>{
+  if(e.key==="ArrowLeft") keys.left=true;
+  if(e.key==="ArrowRight") keys.right=true;
+  if(e.key==="ArrowUp") keys.gas=true;
+});
 
-// =====================
-// DRIVING SYSTEM (FIXED)
-// =====================
-let speed = 0;
-const maxSpeed = 1.2;
-const accel = 0.03;
-const brake = 0.05;
-const friction = 0.96;
-const turnSpeed = 0.04;
+addEventListener("keyup",e=>{
+  if(e.key==="ArrowLeft") keys.left=false;
+  if(e.key==="ArrowRight") keys.right=false;
+  if(e.key==="ArrowUp") keys.gas=false;
+});
 
-// =====================
-// UPDATE CAR
-// =====================
-function updateCar(){
+// MOBILE
+function bindBtn(id, key){
+  const el = document.getElementById(id);
 
-  // GAS
-  if(keys["ArrowUp"]){
-    speed += accel;
-  }
-
-  // BRAKE / REVERSE
-  if(keys["ArrowDown"]){
-    speed -= brake;
-  }
-
-  // FRICTION
-  speed *= friction;
-
-  // LIMIT SPEED
-  if(speed > maxSpeed) speed = maxSpeed;
-  if(speed < -0.4) speed = -0.4;
-
-  // TURN (harus ada speed supaya gak diam putar)
-  if(keys["ArrowLeft"]){
-    car.rotation.y += turnSpeed * (Math.abs(speed) > 0.05 ? 1 : 0);
-  }
-
-  if(keys["ArrowRight"]){
-    car.rotation.y -= turnSpeed * (Math.abs(speed) > 0.05 ? 1 : 0);
-  }
-
-  // MOVE CAR
-  car.position.x -= Math.sin(car.rotation.y) * speed;
-  car.position.z -= Math.cos(car.rotation.y) * speed;
+  el.ontouchstart = ()=>keys[key]=true;
+  el.ontouchend = ()=>keys[key]=false;
 }
 
-// =====================
-// CAMERA CHASE (SMOOTH)
-// =====================
-const camOffset = new THREE.Vector3(0, 5, 10);
+bindBtn("left","left");
+bindBtn("right","right");
+bindBtn("gas","gas");
+
+// ================= PHYSICS =================
+let speed = 0;
+
+function updateCar(){
+
+  if(keys.gas) speed += 0.03;
+
+  speed *= 0.97;
+
+  if(speed > 1.2) speed = 1.2;
+
+  if(keys.left) car.rotation.y += 0.04;
+  if(keys.right) car.rotation.y -= 0.04;
+
+  car.position.x -= Math.sin(car.rotation.y)*speed;
+  car.position.z -= Math.cos(car.rotation.y)*speed;
+}
+
+// ================= CAMERA =================
+const offset = new THREE.Vector3(0,5,10);
 
 function updateCamera(){
+  const m = new THREE.Matrix4();
+  m.extractRotation(car.matrix);
 
-  const rot = new THREE.Matrix4();
-  rot.extractRotation(car.matrix);
+  const behind = offset.clone().applyMatrix4(m);
+  const pos = new THREE.Vector3().addVectors(car.position, behind);
 
-  const behind = camOffset.clone().applyMatrix4(rot);
-
-  const target = new THREE.Vector3().addVectors(car.position, behind);
-
-  camera.position.lerp(target, 0.1);
+  camera.position.lerp(pos,0.1);
   camera.lookAt(car.position);
 }
 
-// =====================
-// LOOP
-// =====================
+// ================= LOOP =================
 function animate(){
   requestAnimationFrame(animate);
 
@@ -200,11 +185,11 @@ function animate(){
 
 animate();
 
-// RESIZE
+// resize
 addEventListener("resize",()=>{
   camera.aspect = innerWidth/innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth,innerHeight);
+  renderer.setSize(innerWidth, innerHeight);
 });
 
 </script>
