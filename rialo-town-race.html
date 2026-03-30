@@ -5,89 +5,82 @@
 <style>
 body{margin:0;overflow:hidden;background:#000;}
 #controls{
-  position:fixed;
-  bottom:20px;
-  width:100%;
-  display:flex;
-  justify-content:center;
-  gap:12px;
+ position:fixed;bottom:20px;width:100%;
+ display:flex;justify-content:center;gap:10px;
 }
 .btn{
-  width:70px;height:70px;
-  background:#222;color:#fff;
-  font-size:22px;
-  display:flex;align-items:center;justify-content:center;
-  border-radius:12px;
+ width:70px;height:70px;
+ background:#222;color:#fff;
+ display:flex;align-items:center;justify-content:center;
+ border-radius:12px;
 }
 </style>
 </head>
 <body>
 
 <div id="controls">
-  <div class="btn" id="left">◀</div>
-  <div class="btn" id="gas">▲</div>
-  <div class="btn" id="right">▶</div>
+<div class="btn" id="left">◀</div>
+<div class="btn" id="gas">▲</div>
+<div class="btn" id="right">▶</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-
 <script>
 
-// ===== SCENE =====
 const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x0a0a1a);
+
 const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,0.1,1000);
-const renderer=new THREE.WebGLRenderer({antialias:false});
+const renderer=new THREE.WebGLRenderer();
 renderer.setSize(innerWidth,innerHeight);
 document.body.appendChild(renderer.domElement);
 
 scene.add(new THREE.AmbientLight(0xffffff,1));
 
-// ===== TRACK HALUS (PENTING) =====
-const curve=new THREE.CatmullRomCurve3([
-  new THREE.Vector3(0,0,0),
-  new THREE.Vector3(0,0,-120),
-  new THREE.Vector3(80,0,-200),
-  new THREE.Vector3(0,0,-320),
-  new THREE.Vector3(-80,0,-200),
-  new THREE.Vector3(0,0,-120),
-  new THREE.Vector3(0,0,0)
-],true);
+// ===== GROUND =====
+const ground=new THREE.Mesh(
+ new THREE.PlaneGeometry(500,500),
+ new THREE.MeshBasicMaterial({color:0x111111})
+);
+ground.rotation.x=-Math.PI/2;
+scene.add(ground);
 
-// ===== ROAD (LEBAR + MARKAH) =====
-const pts=curve.getPoints(250);
+// ===== ROAD FUNCTION =====
+function road(x,z,w,l,rot){
+ const r=new THREE.Mesh(
+   new THREE.BoxGeometry(w,0.2,l),
+   new THREE.MeshBasicMaterial({color:0x333333})
+ );
+ r.position.set(x,0,z);
+ r.rotation.y=rot;
+ scene.add(r);
 
-for(let i=0;i<pts.length-1;i++){
-  const a=pts[i], b=pts[i+1];
+ // garis tengah
+ for(let i=0;i<l/6;i++){
+   const m=new THREE.Mesh(
+     new THREE.BoxGeometry(0.3,0.05,2),
+     new THREE.MeshBasicMaterial({color:0xffffff})
+   );
 
-  const dx=b.x-a.x, dz=b.z-a.z;
-  const dist=Math.sqrt(dx*dx+dz*dz);
-
-  // jalan
-  const road=new THREE.Mesh(
-    new THREE.BoxGeometry(16,0.2,dist),
-    new THREE.MeshBasicMaterial({color:0x2f2f2f})
-  );
-  road.position.set((a.x+b.x)/2,0,(a.z+b.z)/2);
-  road.rotation.y=Math.atan2(dx,dz);
-  scene.add(road);
-
-  // garis tengah
-  const line=new THREE.Mesh(
-    new THREE.BoxGeometry(0.3,0.05,2),
-    new THREE.MeshBasicMaterial({color:0xffffff})
-  );
-
-  line.position.set((a.x+b.x)/2,0.15,(a.z+b.z)/2);
-  line.rotation.y=road.rotation.y;
-  scene.add(line);
+   const dz = i*6 - l/2;
+   m.position.set(x,0.2,z+dz);
+   m.rotation.y=rot;
+   scene.add(m);
+ }
 }
+
+// ===== TRACK KOTA =====
+road(0,-60,16,120,0);      // lurus
+road(40,-120,16,120,Math.PI/2); // belok kanan
+road(40,-200,16,120,0);    // lurus lagi
+road(0,-260,16,120,Math.PI/2); // belok lagi
 
 // ===== CAR =====
 const car=new THREE.Mesh(
-  new THREE.BoxGeometry(1.6,0.8,3),
-  new THREE.MeshBasicMaterial({color:0xff0000})
+ new THREE.BoxGeometry(2,1,4),
+ new THREE.MeshBasicMaterial({color:0xff0000})
 );
-car.position.set(0,1,5);
+car.position.set(0,1,10);
 scene.add(car);
 
 // ===== INPUT =====
@@ -96,74 +89,51 @@ addEventListener("keydown",e=>keys[e.key]=true);
 addEventListener("keyup",e=>keys[e.key]=false);
 
 function bind(id,key){
-  const el=document.getElementById(id);
-  el.ontouchstart=()=>keys[key]=true;
-  el.ontouchend=()=>keys[key]=false;
+ const el=document.getElementById(id);
+ el.ontouchstart=()=>keys[key]=true;
+ el.ontouchend=()=>keys[key]=false;
 }
 bind("left","ArrowLeft");
 bind("right","ArrowRight");
 bind("gas","ArrowUp");
 
-// ===== DRIVING FEEL (INI YANG DIUPGRADE) =====
+// ===== DRIVE =====
 let speed=0;
-let velocity=new THREE.Vector3();
 
-function updateCar(){
+function update(){
+ if(keys["ArrowUp"]) speed+=0.05;
+ speed*=0.96;
 
-  // GAS
-  if(keys["ArrowUp"]) speed+=0.06;
-  speed*=0.95;
+ if(keys["ArrowLeft"]) car.rotation.y+=0.04;
+ if(keys["ArrowRight"]) car.rotation.y-=0.04;
 
-  if(speed>2) speed=2;
-
-  // STEER (lebih halus)
-  if(keys["ArrowLeft"]) car.rotation.y+=0.035*(speed+0.3);
-  if(keys["ArrowRight"]) car.rotation.y-=0.035*(speed+0.3);
-
-  // arah depan mobil
-  const forward=new THREE.Vector3(
-    -Math.sin(car.rotation.y),
-    0,
-    -Math.cos(car.rotation.y)
-  );
-
-  // SLIDE EFFECT (biar gak kaku)
-  velocity.lerp(forward.multiplyScalar(speed),0.1);
-
-  car.position.add(velocity);
+ car.position.x -= Math.sin(car.rotation.y)*speed;
+ car.position.z -= Math.cos(car.rotation.y)*speed;
 }
 
-// ===== CAMERA (SMOOTH FOLLOW) =====
-const offset=new THREE.Vector3(0,5,12);
+// ===== CAMERA =====
+const offset=new THREE.Vector3(0,3,7);
 
 function cam(){
-  const m=new THREE.Matrix4();
-  m.extractRotation(car.matrix);
+ const m=new THREE.Matrix4();
+ m.extractRotation(car.matrix);
 
-  const target=offset.clone().applyMatrix4(m).add(car.position);
-
-  camera.position.lerp(target,0.08);
-  camera.lookAt(car.position);
+ const pos=offset.clone().applyMatrix4(m).add(car.position);
+ camera.position.lerp(pos,0.1);
+ camera.lookAt(car.position);
 }
 
 // ===== LOOP =====
 function animate(){
-  requestAnimationFrame(animate);
+ requestAnimationFrame(animate);
 
-  updateCar();
-  cam();
+ update();
+ cam();
 
-  renderer.render(scene,camera);
+ renderer.render(scene,camera);
 }
 animate();
 
-addEventListener("resize",()=>{
-  camera.aspect=innerWidth/innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth,innerHeight);
-});
-
 </script>
-
 </body>
 </html>
