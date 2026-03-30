@@ -3,12 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RIALO RACE FINAL</title>
+<title>RIALO CITY RACE</title>
 
 <style>
-body { margin:0; overflow:hidden; background:#87CEEB; }
+body { margin:0; overflow:hidden; background:#000; }
 
-/* UI MOBILE */
 #controls{
   position:fixed;
   bottom:20px;
@@ -29,7 +28,6 @@ body { margin:0; overflow:hidden; background:#87CEEB; }
   align-items:center;
   justify-content:center;
   border-radius:12px;
-  user-select:none;
 }
 </style>
 </head>
@@ -46,43 +44,46 @@ body { margin:0; overflow:hidden; background:#87CEEB; }
 
 <script>
 
-// SCENE
+// ================= SCENE =================
 const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x000000, 20, 200);
 
 const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 1000);
+
 const renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// LIGHT
-scene.add(new THREE.AmbientLight(0xffffff, 1));
-const light = new THREE.DirectionalLight(0xffffff, 1);
-light.position.set(10,20,10);
-scene.add(light);
+// ================= LIGHT =================
+scene.add(new THREE.AmbientLight(0x555555));
 
-// ================= ROAD LOOP =================
+const neonLight = new THREE.DirectionalLight(0x88aaff,1);
+neonLight.position.set(10,20,10);
+scene.add(neonLight);
+
+// ================= ROAD =================
 const path = [
   new THREE.Vector3(0,0,0),
-  new THREE.Vector3(-20,0,-30),
-  new THREE.Vector3(20,0,-60),
-  new THREE.Vector3(-20,0,-90),
-  new THREE.Vector3(20,0,-120),
-  new THREE.Vector3(0,0,-150),
+  new THREE.Vector3(-20,0,-40),
+  new THREE.Vector3(20,0,-80),
+  new THREE.Vector3(-20,0,-120),
+  new THREE.Vector3(20,0,-160),
+  new THREE.Vector3(0,0,-200),
   new THREE.Vector3(0,0,0)
 ];
 
 function buildRoad(a,b){
-  const dx = b.x - a.x;
-  const dz = b.z - a.z;
-  const dist = Math.sqrt(dx*dx + dz*dz);
+  const dx = b.x-a.x;
+  const dz = b.z-a.z;
+  const dist = Math.sqrt(dx*dx+dz*dz);
 
   const road = new THREE.Mesh(
     new THREE.BoxGeometry(12,0.2,dist),
-    new THREE.MeshStandardMaterial({color:0x2a2a2a})
+    new THREE.MeshStandardMaterial({color:0x222222})
   );
 
   road.position.set((a.x+b.x)/2,0,(a.z+b.z)/2);
-  road.rotation.y = Math.atan2(dx, dz);
+  road.rotation.y = Math.atan2(dx,dz);
   scene.add(road);
 
   for(let i=0;i<dist/3;i++){
@@ -102,8 +103,82 @@ function buildRoad(a,b){
 }
 
 for(let i=0;i<path.length-1;i++){
-  buildRoad(path[i], path[i+1]);
+  buildRoad(path[i],path[i+1]);
 }
+
+// ================= BUILDINGS =================
+function createBuilding(x,z){
+  const h = 10 + Math.random()*40;
+
+  const b = new THREE.Mesh(
+    new THREE.BoxGeometry(6,h,6),
+    new THREE.MeshStandardMaterial({
+      color:0x111133,
+      emissive:0x2222ff,
+      emissiveIntensity:0.5,
+      metalness:0.8,
+      roughness:0.2
+    })
+  );
+
+  b.position.set(x,h/2,z);
+  scene.add(b);
+}
+
+// sebar gedung
+for(let i=0;i<80;i++){
+  let x = (Math.random()-0.5)*150;
+  let z = -Math.random()*250;
+
+  if(Math.abs(x)>15){
+    createBuilding(x,z);
+  }
+}
+
+// ================= LAMP =================
+function createLamp(x,z){
+
+  const pole = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.1,0.1,5),
+    new THREE.MeshStandardMaterial({color:0x888888})
+  );
+
+  pole.position.set(x,2.5,z);
+  scene.add(pole);
+
+  const light = new THREE.PointLight(0xffffaa,1,20);
+  light.position.set(x,5,z);
+  scene.add(light);
+}
+
+for(let i=0;i<25;i++){
+  createLamp(-8,-i*10);
+  createLamp(8,-i*10);
+}
+
+// ================= SIGN =================
+function createSign(x,z){
+
+  const pole = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.1,0.1,3),
+    new THREE.MeshStandardMaterial({color:0xffffff})
+  );
+
+  pole.position.set(x,1.5,z);
+  scene.add(pole);
+
+  const sign = new THREE.Mesh(
+    new THREE.BoxGeometry(2,1,0.2),
+    new THREE.MeshBasicMaterial({color:0xff0000})
+  );
+
+  sign.position.set(x,3,z);
+  scene.add(sign);
+}
+
+createSign(-15,-40);
+createSign(15,-80);
+createSign(-15,-120);
 
 // ================= CAR =================
 const car = new THREE.Mesh(
@@ -114,9 +189,8 @@ car.position.set(0,1,0);
 scene.add(car);
 
 // ================= INPUT =================
-let keys = {left:false,right:false,gas:false};
+let keys={left:false,right:false,gas:false};
 
-// PC
 addEventListener("keydown",e=>{
   if(e.key==="ArrowLeft") keys.left=true;
   if(e.key==="ArrowRight") keys.right=true;
@@ -129,45 +203,40 @@ addEventListener("keyup",e=>{
   if(e.key==="ArrowUp") keys.gas=false;
 });
 
-// MOBILE
-function bindBtn(id, key){
-  const el = document.getElementById(id);
-
-  el.ontouchstart = ()=>keys[key]=true;
-  el.ontouchend = ()=>keys[key]=false;
+// mobile
+function bind(id,key){
+  const el=document.getElementById(id);
+  el.ontouchstart=()=>keys[key]=true;
+  el.ontouchend=()=>keys[key]=false;
 }
+bind("left","left");
+bind("right","right");
+bind("gas","gas");
 
-bindBtn("left","left");
-bindBtn("right","right");
-bindBtn("gas","gas");
-
-// ================= PHYSICS =================
-let speed = 0;
+// ================= DRIVING =================
+let speed=0;
 
 function updateCar(){
+  if(keys.gas) speed+=0.03;
+  speed*=0.97;
+  if(speed>1.3) speed=1.3;
 
-  if(keys.gas) speed += 0.03;
-
-  speed *= 0.97;
-
-  if(speed > 1.2) speed = 1.2;
-
-  if(keys.left) car.rotation.y += 0.04;
-  if(keys.right) car.rotation.y -= 0.04;
+  if(keys.left) car.rotation.y+=0.04;
+  if(keys.right) car.rotation.y-=0.04;
 
   car.position.x -= Math.sin(car.rotation.y)*speed;
   car.position.z -= Math.cos(car.rotation.y)*speed;
 }
 
 // ================= CAMERA =================
-const offset = new THREE.Vector3(0,5,10);
+const offset=new THREE.Vector3(0,5,10);
 
 function updateCamera(){
-  const m = new THREE.Matrix4();
+  const m=new THREE.Matrix4();
   m.extractRotation(car.matrix);
 
-  const behind = offset.clone().applyMatrix4(m);
-  const pos = new THREE.Vector3().addVectors(car.position, behind);
+  const behind=offset.clone().applyMatrix4(m);
+  const pos=new THREE.Vector3().addVectors(car.position,behind);
 
   camera.position.lerp(pos,0.1);
   camera.lookAt(car.position);
@@ -182,14 +251,12 @@ function animate(){
 
   renderer.render(scene,camera);
 }
-
 animate();
 
-// resize
 addEventListener("resize",()=>{
-  camera.aspect = innerWidth/innerHeight;
+  camera.aspect=innerWidth/innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight);
+  renderer.setSize(innerWidth,innerHeight);
 });
 
 </script>
