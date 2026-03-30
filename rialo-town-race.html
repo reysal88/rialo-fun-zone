@@ -4,9 +4,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 body{margin:0;overflow:hidden;background:#000;}
-#ui{position:absolute;top:10px;left:10px;color:#fff;font-family:Arial;}
-#controls{position:fixed;bottom:20px;width:100%;display:flex;justify-content:center;gap:10px;}
-.btn{width:65px;height:65px;background:#222;color:#fff;display:flex;align-items:center;justify-content:center;border-radius:10px;}
+#ui{position:absolute;top:10px;left:10px;color:#fff;font-family:Arial}
+#controls{position:fixed;bottom:20px;width:100%;display:flex;justify-content:center;gap:10px}
+.btn{width:65px;height:65px;background:#222;color:#fff;display:flex;align-items:center;justify-content:center;border-radius:10px}
 </style>
 </head>
 <body>
@@ -14,87 +14,60 @@ body{margin:0;overflow:hidden;background:#000;}
 <div id="ui">Lap: 1 / 5</div>
 
 <div id="controls">
-<div class="btn" id="left">◀</div>
-<div class="btn" id="gas">▲</div>
-<div class="btn" id="right">▶</div>
+  <div class="btn" id="left">◀</div>
+  <div class="btn" id="gas">▲</div>
+  <div class="btn" id="right">▶</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script>
 
+// ===== BASIC SCENE =====
 const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,0.1,1000);
 const renderer=new THREE.WebGLRenderer({antialias:false});
 renderer.setSize(innerWidth,innerHeight);
 document.body.appendChild(renderer.domElement);
-
 scene.add(new THREE.AmbientLight(0xffffff,1));
 
-// ===== TRACK HALUS (INI YANG BENER) =====
+// ===== SIMPLE LOOP TRACK (OVAL) =====
 const curve=new THREE.CatmullRomCurve3([
   new THREE.Vector3(0,0,0),
-  new THREE.Vector3(0,0,-80),
-  new THREE.Vector3(60,0,-120),
-  new THREE.Vector3(60,0,-200),
-  new THREE.Vector3(0,0,-260),
-  new THREE.Vector3(-60,0,-200),
-  new THREE.Vector3(-60,0,-120),
-  new THREE.Vector3(0,0,-80),
+  new THREE.Vector3(0,0,-120),
+  new THREE.Vector3(80,0,-200),
+  new THREE.Vector3(0,0,-280),
+  new THREE.Vector3(-80,0,-200),
+  new THREE.Vector3(0,0,-120),
   new THREE.Vector3(0,0,0)
-],true);
+], true);
 
-// ===== ROAD SMOOTH =====
-const pts=curve.getPoints(300);
-
+// visual road
+const pts=curve.getPoints(180);
 for(let i=0;i<pts.length-1;i++){
-  const a=pts[i],b=pts[i+1];
-
-  const dx=b.x-a.x;
-  const dz=b.z-a.z;
+  const a=pts[i], b=pts[i+1];
+  const dx=b.x-a.x, dz=b.z-a.z;
   const dist=Math.sqrt(dx*dx+dz*dz);
-
-  const mesh=new THREE.Mesh(
-    new THREE.BoxGeometry(12,0.2,dist),
+  const seg=new THREE.Mesh(
+    new THREE.BoxGeometry(14,0.2,dist),
     new THREE.MeshBasicMaterial({color:0x333333})
   );
-
-  mesh.position.set((a.x+b.x)/2,0,(a.z+b.z)/2);
-  mesh.rotation.y=Math.atan2(dx,dz);
-  scene.add(mesh);
+  seg.position.set((a.x+b.x)/2,0,(a.z+b.z)/2);
+  seg.rotation.y=Math.atan2(dx,dz);
+  scene.add(seg);
 }
 
-// ===== START LINE =====
-const startLine=new THREE.Mesh(
-  new THREE.BoxGeometry(12,0.1,4),
+// ===== START/FINISH LINE =====
+const lineZ = 0; // garis di Z=0
+const line=new THREE.Mesh(
+  new THREE.BoxGeometry(14,0.1,6),
   new THREE.MeshBasicMaterial({color:0xffffff})
 );
-startLine.position.set(0,0.2,0);
-scene.add(startLine);
-
-// ===== CHECKPOINT (DI TIKUNGAN) =====
-const checkpoints=[
-  new THREE.Vector3(0,0,-80),
-  new THREE.Vector3(60,0,-160),
-  new THREE.Vector3(0,0,-260),
-  new THREE.Vector3(-60,0,-160)
-];
-
-let cpIndex=0,lap=1,prevZ=5;
-
-// visual checkpoint
-checkpoints.forEach(p=>{
-  const ring=new THREE.Mesh(
-    new THREE.TorusGeometry(4,0.2,8,16),
-    new THREE.MeshBasicMaterial({color:0x00ff00})
-  );
-  ring.position.copy(p);
-  ring.rotation.x=Math.PI/2;
-  scene.add(ring);
-});
+line.position.set(0,0.2,lineZ);
+scene.add(line);
 
 // ===== CAR =====
 const car=new THREE.Mesh(
-  new THREE.BoxGeometry(1.5,0.7,3),
+  new THREE.BoxGeometry(1.6,0.8,3),
   new THREE.MeshBasicMaterial({color:0xff0000})
 );
 car.position.set(0,1,5);
@@ -104,67 +77,66 @@ scene.add(car);
 let keys={};
 addEventListener("keydown",e=>keys[e.key]=true);
 addEventListener("keyup",e=>keys[e.key]=false);
-
 function bind(id,key){
   const el=document.getElementById(id);
   el.ontouchstart=()=>keys[key]=true;
   el.ontouchend=()=>keys[key]=false;
 }
-bind("left","ArrowLeft");
-bind("right","ArrowRight");
-bind("gas","ArrowUp");
+bind("left","ArrowLeft"); bind("right","ArrowRight"); bind("gas","ArrowUp");
 
-// ===== DRIVE =====
+// ===== DRIVING =====
 let speed=0;
-
-function updateCar(){
+function drive(){
   if(keys["ArrowUp"]) speed+=0.04;
-  speed*=0.97;
-  if(speed>1.5) speed=1.5;
+  speed*=0.97; if(speed>1.5) speed=1.5;
 
   if(keys["ArrowLeft"]) car.rotation.y+=0.04;
   if(keys["ArrowRight"]) car.rotation.y-=0.04;
 
-  car.position.x-=Math.sin(car.rotation.y)*speed;
-  car.position.z-=Math.cos(car.rotation.y)*speed;
+  car.position.x -= Math.sin(car.rotation.y)*speed;
+  car.position.z -= Math.cos(car.rotation.y)*speed;
 }
 
-// ===== RACE SYSTEM (BERSIH) =====
-function checkRace(){
+// ===== LAP SYSTEM (CLEAN) =====
+let lap=1;
+let prevZ = car.position.z;
+let progress = 0;        // jarak kasar sejak last lap
+let lastLapDistance = 0; // reset tiap lap
 
-  // checkpoint harus urut
-  if(car.position.distanceTo(checkpoints[cpIndex])<10){
-    cpIndex++;
-  }
+function updateLap(){
+  // akumulasi “progress” (jarak tempuh kasar)
+  const dx = Math.sin(car.rotation.y)*speed;
+  const dz = Math.cos(car.rotation.y)*speed;
+  progress += Math.abs(dx)+Math.abs(dz);
 
-  // kalau semua checkpoint sudah lewat
-  if(cpIndex>=checkpoints.length){
+  // crossing line dari arah depan → belakang
+  const crossed = (prevZ > lineZ && car.position.z <= lineZ);
 
-    // crossing start line
-    if(prevZ>0 && car.position.z<=0){
+  // syarat sah: sudah keliling cukup jauh (anti bolak-balik di garis)
+  const enoughLoop = (progress - lastLapDistance) > 300;
 
-      lap++;
-      cpIndex=0;
+  if(crossed && enoughLoop){
+    lap++;
+    lastLapDistance = progress;
 
-      if(lap>5){
-        alert("FINISH!");
-        lap=1;
-      }
-
-      document.getElementById("ui").innerText="Lap: "+lap+" / 5";
+    if(lap>5){
+      alert("FINISH! 🏁");
+      lap=1;
+      progress=0;
+      lastLapDistance=0;
     }
+
+    document.getElementById("ui").innerText = "Lap: "+lap+" / 5";
   }
 
-  prevZ=car.position.z;
+  prevZ = car.position.z;
 }
 
 // ===== CAMERA =====
 const offset=new THREE.Vector3(0,5,10);
-
 function cam(){
   const m=new THREE.Matrix4();
   m.extractRotation(car.matrix);
-
   const pos=offset.clone().applyMatrix4(m).add(car.position);
   camera.position.lerp(pos,0.1);
   camera.lookAt(car.position);
@@ -173,15 +145,18 @@ function cam(){
 // ===== LOOP =====
 function animate(){
   requestAnimationFrame(animate);
-
-  updateCar();
-  checkRace();
+  drive();
+  updateLap();
   cam();
-
   renderer.render(scene,camera);
 }
 animate();
 
+addEventListener("resize",()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
 </script>
 </body>
 </html>
