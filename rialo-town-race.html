@@ -2,164 +2,29 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coming Soon</title>
+
 <style>
-body{margin:0;overflow:hidden;}
-#controls{
- position:fixed;bottom:20px;width:100%;
- display:flex;justify-content:center;gap:10px;
+body{
+  margin:0;
+  background:black;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  font-family:Arial, sans-serif;
 }
-.btn{
- width:65px;height:65px;
- background:#333;color:#fff;
- display:flex;align-items:center;justify-content:center;
- border-radius:10px;
+
+h1{
+  color:white;
+  font-size:40px;
+  letter-spacing:5px;
 }
 </style>
 </head>
 <body>
 
-<div id="controls">
-<div class="btn" id="left">◀</div>
-<div class="btn" id="gas">▲</div>
-<div class="btn" id="right">▶</div>
-</div>
+<h1>COMING SOON</h1>
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-
-<script>
-
-// ===== SCENE =====
-const scene=new THREE.Scene();
-scene.background=new THREE.Color(0xaaaaaa); // terang
-
-const camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,1000);
-const renderer=new THREE.WebGLRenderer();
-renderer.setSize(innerWidth,innerHeight);
-document.body.appendChild(renderer.domElement);
-
-scene.add(new THREE.AmbientLight(0xffffff,1));
-
-// ===== GROUND =====
-const ground=new THREE.Mesh(
- new THREE.PlaneGeometry(1000,1000),
- new THREE.MeshBasicMaterial({color:0xcccccc})
-);
-ground.rotation.x=-Math.PI/2;
-scene.add(ground);
-
-// ===== JALAN LOOP (UTUH, GAK PUTUS) =====
-const shape = new THREE.Shape();
-shape.absarc(0,0,60,0,Math.PI*2,false);
-
-const hole = new THREE.Path();
-hole.absarc(0,0,40,0,Math.PI*2,true);
-
-shape.holes.push(hole);
-
-const roadGeo = new THREE.ShapeGeometry(shape);
-const roadMat = new THREE.MeshBasicMaterial({color:0x444444});
-
-const road = new THREE.Mesh(roadGeo,roadMat);
-road.rotation.x = -Math.PI/2;
-scene.add(road);
-
-// ===== GARIS JALAN =====
-for(let i=0;i<360;i+=10){
- const rad = i * Math.PI/180;
-
- const x = Math.cos(rad)*50;
- const z = Math.sin(rad)*50;
-
- const line = new THREE.Mesh(
-   new THREE.BoxGeometry(0.5,0.1,2),
-   new THREE.MeshBasicMaterial({color:0xffffff})
- );
-
- line.position.set(x,0.2,z);
- line.rotation.y = -rad;
-
- scene.add(line);
-}
-
-// ===== GEDUNG SEDERHANA =====
-for(let i=0;i<40;i++){
- const b=new THREE.Mesh(
-   new THREE.BoxGeometry(10,20+Math.random()*40,10),
-   new THREE.MeshBasicMaterial({color:0x8888ff})
- );
- b.position.set(
-   (Math.random()-0.5)*300,
-   b.geometry.parameters.height/2,
-   (Math.random()-0.5)*300
- );
- scene.add(b);
-}
-
-// ===== MOBIL =====
-const car=new THREE.Mesh(
- new THREE.BoxGeometry(2,1,4),
- new THREE.MeshBasicMaterial({color:0xff0000})
-);
-scene.add(car);
-
-// ===== CONTROL =====
-let keys={};
-addEventListener("keydown",e=>keys[e.key]=true);
-addEventListener("keyup",e=>keys[e.key]=false);
-
-function bind(id,key){
- const el=document.getElementById(id);
- el.ontouchstart=()=>keys[key]=true;
- el.ontouchend=()=>keys[key]=false;
-}
-bind("left","ArrowLeft");
-bind("right","ArrowRight");
-bind("gas","ArrowUp");
-
-// ===== DRIVE DI DALAM RING =====
-let angle=0;
-let speed=0;
-
-function update(){
-
- if(keys["ArrowUp"]) speed+=0.002;
- speed*=0.98;
-
- if(keys["ArrowLeft"]) angle+=0.03;
- if(keys["ArrowRight"]) angle-=0.03;
-
- angle+=speed;
-
- const r=50;
-
- const x=Math.cos(angle)*r;
- const z=Math.sin(angle)*r;
-
- car.position.set(x,1,z);
-
- car.rotation.y = -angle;
-}
-
-// ===== CAMERA =====
-const offset=new THREE.Vector3(0,4,8);
-
-function cam(){
- const pos=car.position.clone().add(offset);
- camera.position.lerp(pos,0.1);
- camera.lookAt(car.position);
-}
-
-// ===== LOOP =====
-function animate(){
- requestAnimationFrame(animate);
-
- update();
- cam();
-
- renderer.render(scene,camera);
-}
-animate();
-
-</script>
 </body>
 </html>
